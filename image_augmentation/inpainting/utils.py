@@ -84,14 +84,6 @@ def load_data_hf(hf_dataset, data_dir, out_path):
     # loading flat metadata & joining in mask labels:
     metadata = pd.read_csv(os.path.join(data_dir, "metadata_flat.csv"))
     datasets = metadata.dataset.unique()
-    # datasets = [
-    #     "CelebAHQ",
-    #     "ADE20K",
-    #     "SUN_RGBD",
-    #     "CityScapes",
-    #     "HumanParsing",
-    #     "OpenImages",
-    # ]
 
     ds_dfs = []
     for ds in datasets:
@@ -100,7 +92,7 @@ def load_data_hf(hf_dataset, data_dir, out_path):
         data_df["dataset"] = [ds] * len(data_df)
         ds_dfs.append(data_df)
     full_data = pd.concat(ds_dfs)
-    full_data = full_data.loc[full_name.mask_name != "NA"]
+    full_data = full_data.loc[full_data.mask_name != "NA"]
     # full_data = full_data.rename(
     #     columns={"label": "mask", "img_name": "image_id", "mask_name": "mask_id"}
     # )
@@ -391,6 +383,7 @@ def get_llava_perts(
     context_len,
     viz_dir,
     retry=3,
+    verbose=False,
 ):
     """
     Uses the latest instantiation of the ``size_based_change`` function
@@ -491,7 +484,7 @@ def get_llava_perts(
 
         recent_perts.append(id_)
 
-        if progress % 10 == 0 and progress > 0:
+        if progress % 10 == 0 and progress > 0 and verbose:
             # saving interm mask label pert file:
             with open(outpath, "w") as out_file:
                 json.dump(processed_metadata, out_file)

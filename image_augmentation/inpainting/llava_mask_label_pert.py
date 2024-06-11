@@ -1,8 +1,4 @@
 import os
-
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5"
-import sys
 from tqdm import tqdm
 from run_llava import eval_model, load_model, eval_model_wo_loading
 from diffusers import (
@@ -15,51 +11,73 @@ from utils import *
 from sentence_transformers import SentenceTransformer, util
 from accelerate import Accelerator
 from datasets import load_dataset
-import PIL
-from PIL import Image, ImageFilter
-import random
 import json
-import requests
 import torch
 from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
-import ipdb
+import pdb
 from huggingface_hub import login
 import warnings
+import argparse
 
-login(token="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")
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 torch.set_warn_always(False)
 warnings.filterwarnings("ignore")
+
+## HuggingFace Log-in ##
+login(token="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")
+
+
+## ARGPARSE ##
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument(
+    "--input_data",
+    default="../../data/input",
+    help="Path to input media.",
+)
+parser.add_argument(
+    "--metadata",
+    default="../../data/input/metadata.csv",
+    help="Path to input metadata.",
+)
+parser.add_argument(
+    "--llava_model",
+    default="liuhaotian/llava-v1.6-mistral-7b",
+    help="LLaVA-Mistral huggingface model id.",
+)
+parser.add_argument(
+    "--llava_cache_dir",
+    default="../llava_cache",
+    help="Directory to store LLaVA cache files.",
+)
+parser.add_argument(
+    "--output_dir",
+    default="../../data/input",
+    help="Directory to save metadata with perturbed mask labels.",
+)
+args = parser.parse_args()
+
+if not os.path.exists(args.output_dir):
+    os.mkdir(args.output_dir)
+OUTPATH = os.path.join(args.output_dir, "metadata_pert.json")
+VIZ_DIR = os.getcwd()
 
 
 ## DATA LOADING ##
 
-CACHE_DIR = "/home/jkruk3/how_fake/inpainting/LLaVA/cache"
-DATA_DIR = "/data/jkruk3/Half_Truths_Dataset"
-ROOT_DIR = "/data/jkruk3"
-OUTPATH = os.path.join(DATA_DIR, "metadata_pert_ade20k.json")
-VIZ_DIR = os.getcwd()
-# MODEL = "liuhaotian/llava-v1.6-mistral-7b"
-MODEL = "liuhaotian/llava-v1.6-34b"
-DS = "ADE20K"  # benchmark to sample data from for this run
+metadata, processed_metadata = load_data_hf(args.input_data, OUTPATH)
+print(f"Number of images for mask label perturbation: {len(metadata)}\n")
 
-metadata, processed_metadata = load_data(DATA_DIR, OUTPATH)
-# metadata, processed_metadata = load_data_hf(
-#     "Half-Truths-Project/base-datasets-2", DATA_DIR, OUTPATH
-# )
-
-data_samp = sample_by_dataset(metadata, DS)
-print(f"Number of images for mask label perturbation: {len(data_samp)}\n")
-print(f"Number of images for already processed: {len(processed_metadata)}\n")
-
-data_ds = InpaintingPertDataset(data_samp)
+data_ds = InpaintingPertDataset(metadata)
 inf_dataloader = DataLoader(data_ds, batch_size=1, shuffle=True)
+
 
 ## MODEL LOADING  ##
 
 # LLaVA model agruments for LLaVA-Mistral:
-model_path = MODEL
+model_path = args.model
 prompt = ""
 image_file = ""
 args = type(
@@ -77,7 +95,7 @@ args = type(
         "top_p": 0.5,
         "num_beams": 5,
         "max_new_tokens": 512,
-        "cache_dir": CACHE_DIR,
+        "cache_dir": args.llava_cache_dir,
     },
 )()
 
@@ -86,6 +104,7 @@ tokenizer, model, image_processor, context_len = load_model(args)
 model, inf_dataloader, tokenizer, image_processor = accelerator.prepare(
     model, inf_dataloader, tokenizer, image_processor
 )
+
 
 ## PROMPT STRUCTURING ##
 
@@ -108,10 +127,12 @@ Semantic change in images refers to alterations in meaning or interpretation. He
 Using the definitions of small, medium, and large semantic changes above, """
 
 
+## PERTURBING ##
+
 processed = get_llava_perts(
-    data_samp,
+    metadata,
     processed_metadata,
-    ROOT_DIR,
+    args.input_data,
     OUTPATH,
     context,
     args,
@@ -123,4 +144,4 @@ processed = get_llava_perts(
     retry=3,
 )
 
-ipdb.set_trace()
+print("LLaVA-Mistral mask label perturbations COMPLETE!!!")
