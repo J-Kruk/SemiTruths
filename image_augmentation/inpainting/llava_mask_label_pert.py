@@ -60,7 +60,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--output_dir",
-    default="../../data/input",
+    default="../../data",
     help="Directory to save metadata with perturbed mask labels.",
 )
 args = parser.parse_args()

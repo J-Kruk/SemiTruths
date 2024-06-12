@@ -19,9 +19,33 @@ import torch
 import ipdb
 from tqdm import tqdm
 from huggingface_hub import login
+import argparse
 
 # hugging face token for reading our input dataset:
 login(token="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")
+
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument(
+    "--diff_model",
+    default="StableDiffusion_v4",
+    help="Name of diffusion algorithm for augmentation.",
+)
+parser.add_argument(
+    "--input_data",
+    default="../../data/input",
+    help="Path to input media.",
+)
+parser.add_argument(
+    "--output_dir",
+    default="../../data/gen",
+    help="Path to augmented media.",
+)
+parser.add_argument(
+    "--pert_file",
+    default="../../data/metadata_pert.json",
+    help="Path to json containing label perturbations.",
+)
+args = parser.parse_args()
 
 
 # MODEL DICT --> { <model name> : <model path hf> }
@@ -31,34 +55,45 @@ diff_model_dict = {
     "StableDiffusion_XL": "diffusers/stable-diffusion-xl-1.0-inpainting-0.1",
     "Kandinsky_2_2": "kandinsky-community/kandinsky-2-2-decoder-inpaint",
     "OpenJourney": "prompthero/openjourney",
-    # "DeepFloydIF": "DeepFloyd/IF-II-M-v1.0",
 }
 
-# DATASETS --> ['HumanParsing', 'CelebAHQ', 'SUN_RGBD', 'ADE20K', 'CityScapes', 'OpenImages']
-DATASET = "ADE20K"
-DIFF_MODEL = "StableDiffusion_v4"
+DATASETS = [
+    "HumanParsing",
+    "CelebAHQ",
+    "SUN_RGBD",
+    "ADE20K",
+    "CityScapes",
+    "OpenImages",
+]
+# DATASET = "ADE20K"
+# DIFF_MODEL = "StableDiffusion_v4"
+
+if not os.path.exists(args.output_dir):
+    os.makedirs(args.output_dir)
+if not os.path.exists(os.path.join(args.output_dir, "inpainting")):
+    os.makedirs(os.path.join(args.output_dir, "inpainting"))
+
+for ds in DATASETS:
+    dir_ = os.path.join(args.output_dir, "inpainting", ds, args.diff_model)
+    if not os.path.exists(os.path.join(args.output_dir, "inpainting", ds)):
+        os.mkdir(os.path.join(args.output_dir, "inpainting", ds))
+    if not os.path.exists(dir_):
+        os.mkdir(dir_)
 
 # PATH DECLARATIONS
-IMG_DIR = "/data/jkruk3/half-truths/mistral_inpainting"  # "... output dir for generated images ..."
-OUT_DIR = os.path.join(IMG_DIR, DATASET, DIFF_MODEL)
-PERT_LABEL_DIR = "/data/jkruk3/half-truths/mistral_7b"  # "... dir containing metadata with mask label perturbations ..."
+# IMG_DIR = "/data/jkruk3/half-truths/mistral_inpainting"  # "... output dir for generated images ..."
+# OUT_DIR = os.path.join(IMG_DIR, DATASET, args.diff_model)
+# PERT_LABEL_DIR = "/data/jkruk3/half-truths/mistral_7b"  # "... dir containing metadata with mask label perturbations ..."
 
 # --------------------------------------------------------------------------------- #
 
-if not os.path.exists(IMG_DIR):
-    os.makedirs(IMG_DIR)
-if not os.path.exists(os.path.join(IMG_DIR, DATASET)):
-    os.makedirs(os.path.join(IMG_DIR, DATASET))
-if not os.path.exists(OUT_DIR):
-    os.makedirs(OUT_DIR)
-
 # loading input dataset from huggingface:
-input_data = load_dataset("Half-Truths-Project/base-datasets-3", split=DATASET)
+input_data = load_dataset("Half-Truths-Project/base-datasets-3")
 
 # merging all dataset metadata into one DF:
 perturbed_labels = {}
-for file in os.listdir(PERT_LABEL_DIR):
-    with open(os.path.join(PERT_LABEL_DIR, file), "r") as f:
+for file in os.listdir(args.pert_file):
+    with open(os.path.join(args.pert_file, file), "r") as f:
         data_ = json.load(f)
         ds = data_[list(data_.keys())[0]]["dataset"]
         perturbed_labels[ds] = data_
@@ -121,7 +156,9 @@ print(
 )
 
 # preparing output metadata file --> `<dataset>_<model>_meta.csv`
-META_FILE = os.path.join(IMG_DIR, DATASET, f"{DATASET}_{DIFF_MODEL}_meta.csv")
+META_FILE = os.path.join(
+    args.output_dir, DATASET, f"{DATASET}_{args.diff_model}_meta.csv"
+)
 if os.path.exists(META_FILE):
     aug_meta = pd.read_csv(META_FILE)
 else:
@@ -168,7 +205,7 @@ def create_img_augmentations(
     input_data,
     meta,
     diff_model_dict,
-    model_name=DIFF_MODEL,
+    model_name=args.diff_model,
     save_img_dir=OUT_DIR,
     save_meta_file=META_FILE,
 ):
