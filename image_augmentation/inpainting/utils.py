@@ -9,7 +9,7 @@ from datetime import datetime
 from datasets import load_dataset
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-import ipdb
+import pdb
 import pandas as pd
 
 
@@ -40,7 +40,7 @@ def load_data(data_dir, out_path):
     return metadata, processed
 
 
-def df_to_json(hf_data):
+def df_to_json(hf_data, data_dir=None):
     """
     Transforms the metadata from a DataFrame from
     to a json object (which was what the pipeline was
@@ -53,23 +53,40 @@ def df_to_json(hf_data):
         img_data = hf_data.loc[hf_data.image_id == img_id]
         d_ = {}
 
-        d_["image"] = img_data.iloc[0]["image"]
+        if "image" in img_data.columns:
+            d_["image"] = img_data.iloc[0]["image"]
+        else:
+            image_path = os.path.join(data_dir, img_data.iloc[0].image_path)
+            # d_["image"] = Image.open(image_path)
+            d_["image"] = image_path
         d_["dataset"] = img_data.iloc[0]["dataset"]
         d_["entities"] = img_data.iloc[0]["entities"]
         d_["class"] = img_data.iloc[0]["class"]
         d_["objects"] = []
 
-        for _, row in img_data:
-            m_ = {}
-            m_["id"] = row["mask_id"]
-            m_["mask"] = row["mask"]
-            m_["name"] = row["mask_name"]
-            m_["ratio"] = row["ratio"]
-            d_["objects"].append(m_)
+        try:
+            for _, row in img_data.iterrows():
+                m_ = {}
+                m_["id"] = row["mask_id"]
+                m_["mask_path"] = row["mask_path"]
+                m_["name"] = row["mask_name"]
+                m_["ratio"] = row["ratio"]
+                d_["objects"].append(m_)
+        except:
+            pdb.set_trace()
 
         data_dict[img_id] = d_
 
     return data_dict
+
+
+def load_data_flat(data_dir, metafile_name="metadata_flat.csv"):
+    """
+    Loading data from the flattened metadata.
+    """
+    metadata = pd.read_csv(os.path.join(data_dir, metafile_name))
+    full_data_dict = df_to_json(metadata, data_dir=data_dir)
+    return full_data_dict
 
 
 def load_data_hf(hf_dataset, data_dir, out_path):
@@ -442,7 +459,7 @@ def get_llava_perts(
                 try:
                     image = os.path.join(root_dir, info["image_path"])
                 except:
-                    image = obj_info["image"]
+                    image = info["image"]
 
                 output = ""
                 counter = 0
@@ -479,7 +496,7 @@ def get_llava_perts(
             # sanity check, making sure all masks are processed:
             if len(new_objects) != len(info["objects"]):
                 print("We lost an object somehwere!!")
-                ipdb.set_trace()
+                pdb.set_trace()
             processed_metadata[id_] = info
 
         recent_perts.append(id_)

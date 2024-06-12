@@ -1,6 +1,12 @@
 import os
+import sys
+
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
+sys.path.append("../")
+sys.path.append("../LLaVA")
+
 from tqdm import tqdm
-from run_llava import eval_model, load_model, eval_model_wo_loading
+from LLaVA.run_llava import eval_model, load_model, eval_model_wo_loading
 from diffusers import (
     StableDiffusionInpaintPipeline,
     AutoPipelineForInpainting,
@@ -67,7 +73,8 @@ VIZ_DIR = os.getcwd()
 
 ## DATA LOADING ##
 
-metadata, processed_metadata = load_data_hf(args.input_data, OUTPATH)
+metadata = load_data_flat(args.input_data)
+processed_metadata = {}
 print(f"Number of images for mask label perturbation: {len(metadata)}\n")
 
 data_ds = InpaintingPertDataset(metadata)
@@ -77,10 +84,10 @@ inf_dataloader = DataLoader(data_ds, batch_size=1, shuffle=True)
 ## MODEL LOADING  ##
 
 # LLaVA model agruments for LLaVA-Mistral:
-model_path = args.model
+model_path = args.llava_model
 prompt = ""
 image_file = ""
-args = type(
+args_llava = type(
     "Args",
     (),
     {
@@ -100,7 +107,7 @@ args = type(
 )()
 
 accelerator = Accelerator()
-tokenizer, model, image_processor, context_len = load_model(args)
+tokenizer, model, image_processor, context_len = load_model(args_llava)
 model, inf_dataloader, tokenizer, image_processor = accelerator.prepare(
     model, inf_dataloader, tokenizer, image_processor
 )
@@ -128,14 +135,13 @@ Using the definitions of small, medium, and large semantic changes above, """
 
 
 ## PERTURBING ##
-
 processed = get_llava_perts(
     metadata,
     processed_metadata,
     args.input_data,
     OUTPATH,
     context,
-    args,
+    args_llava,
     tokenizer,
     model,
     image_processor,
