@@ -1,3 +1,6 @@
 [submodule "image_augmentation/LLaVA"]
 	path = image_augmentation/LLaVA
 	url = https://github.com/J-Kruk/LLaVA.git
+[submodule "image_augmentation/LANCE"]
+	path = image_augmentation/LANCE
+	url = https://github.com/J-Kruk/LANCE.git
