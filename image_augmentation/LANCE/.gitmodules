@@ -1,0 +1,6 @@
+[submodule "lit-llama"]
+	path = lit-llama
+	url = https://github.com/Lightning-AI/lit-llama
+[submodule "checkpoints"]
+	path = checkpoints
+	url = https://huggingface.co/datasets/LANCE-release/checkpoints
