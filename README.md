@@ -1,12 +1,13 @@
 # Semi-Truths
 Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change
 
-<img width="50px" src="./figures/mag_of_change_head_fig.pdf" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
+<img width="50px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
 
 ## Get Started
 
 ```
 conda create -n semi python=3.10
+conda activate semi
 pip install -r requirements.txt
 ```
 
@@ -22,7 +23,7 @@ python generate_semi_truths.py
 ```
 NOTE: An argparse is defined within this script that can be edited to reflect different data locations.
 
-<img width="50px" src="./figures/final_full_pipeline.pdf" alt="Diagram of the SemiTruths image augmentation process." />
+<img width="50px" src="./figures/final_full_pipeline.png" alt="Diagram of the SemiTruths image augmentation process." />
 
 
 ## Stress-Testing
