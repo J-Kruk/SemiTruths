@@ -1,0 +1,14 @@
+.ipynb_checkpoints/**/*
+.vscode
+__pycache__/
+prompt_to_prompt/__pycache__/**/*
+**/*/.pyc
+store
+**/*/.pt
+*.pt
+*.egg-info/
+*.bat
+Makefile
+build/**/*
+outputs/**/*
+logs/**/*
