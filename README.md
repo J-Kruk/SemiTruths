@@ -23,7 +23,7 @@ python generate_semi_truths.py
 ```
 NOTE: An argparse is defined within this script that can be edited to reflect different data locations.
 
-<img width="500px" src="./figures/final_full_pipeline.png" alt="Diagram of the SemiTruths image augmentation process." />
+<img width="800px" src="./figures/final_full_pipeline.png" alt="Diagram of the SemiTruths image augmentation process." />
 
 
 ## Stress-Testing
