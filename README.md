@@ -3,6 +3,8 @@ Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Cha
 
 <img width="500px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
 
+**PLEASE NOTE: This repository is briefly undergoing maintenance!!**
+
 ## Get Started
 
 ```
