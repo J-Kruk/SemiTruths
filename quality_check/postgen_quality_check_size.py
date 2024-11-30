@@ -12,8 +12,8 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 DS = 'SUN_RGBD'
 MODEL = "StableDiffusion_v5"
 
-# CSV_READ_FILE = '/raid/mphute6/HalfTruths/Half_Truths_Dataset/full_inpainted_data_sample.csv'
-CSV_READ_FILE = f'/raid/mphute6/HalfTruths/inpainting_data/half-truths/half-truths/{DS}/{DS}_{MODEL}_meta.csv'
+CSV_READ_FILE = "" # metadata for generated images
+
 column_map ={
     'image':0,
     'mask':1,
@@ -41,9 +41,9 @@ DS_extemsion_dict ={
         "SUN_RGBD": ".jpg",
     }
 
-PATH_TO_DATA_PARENT = "/raid/mphute6/workspace/HalfTruths/Half_Truths_Dataset/images/"
-CSV_POSTGEN_QC = f"/raid/mphute6/workspace/HalfTruths/postgen_quality_check_size_{DS}_{MODEL}.csv"
-PATH_TO_PERTURB_DATA_PARENT = "/raid/mphute6/workspace/HalfTruths/inpainting_data/half-truths/half-truths/"
+PATH_TO_DATA_PARENT = "" #path to original images parent directory
+CSV_POSTGEN_QC = "" #path to save postgen quality check results
+PATH_TO_PERTURB_DATA_PARENT = "" #path to perturbed images parent directory
 EDIT_EXTENSION = ".png"
 
 def post_qual_check_row(row, 
@@ -55,6 +55,7 @@ def post_qual_check_row(row,
                            DS_EXTENSION, 
                            EDIT_EXTENSION
                            ):
+
     if len(row[column_map['image']]):
             method = row[column_map['method']]
             model = row[column_map['model']]
@@ -70,6 +71,8 @@ def post_qual_check_row(row,
                 brisque_score_orig = brisque_Score(orig_img)
                 #if perturbed image path does not exist, return:
                 if not os.path.exists(os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION)):
+                    print("perturbed image does not exist")
+                    print(os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION))
                     return
 
                 perturbed_img_path = os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION)
@@ -84,13 +87,12 @@ def post_qual_check_row(row,
                 direct_sim = calculate_directional_similarity(orig_img , orig_caption , perturbed_img , perturbed_caption)
                 img1_img2  = calculate_image_similarity(orig_img , perturbed_img)
                 brisque_score = brisque_Score(perturbed_img)
-
-
                 row.extend([cap2_img2, direct_sim, img1_img2, brisque_score_orig, brisque_score])
-
+            
                 writer.writerow(row)
 
             except Exception as e:
+                
                 print(e)
                 return
             
@@ -114,9 +116,9 @@ def postgen_quality_check(CSV_READ_FILE,
     out_f = open(CSV_POSTGEN_QC, 'w')
     writer = csv.writer(out_f)
     writer.writerow(header_qc)
-    
+
     for row in tqdm(file):
-      post_qual_check_row(row, 
+        post_qual_check_row(row, 
                            writer, 
                            DS, 
                            column_map, 

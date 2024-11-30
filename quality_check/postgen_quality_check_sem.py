@@ -10,7 +10,7 @@ import pandas as pd
 
 torch.set_default_tensor_type('torch.cuda.FloatTensor') 
 
-CSV_READ_FILE = '/raid/mphute6/HalfTruths/p2p_data/metadata/metadata/edited/prompt-based-editing.csv'
+CSV_READ_FILE = "" # metadata for generated images
 
 column_map = {
         "img_id": 0,
@@ -42,9 +42,9 @@ DS = 'SUN_RGBD'
 MODEL = "SDv5"
 LANG = "LlaVA-Hermes"
 
-PATH_TO_ORIG_DATA_PARENT = "/raid/mphute6/HalfTruths/original_images/images/"
-CSV_POSTGEN_QC = f"/raid/mphute6/HalfTruths/postgen_quality_check_results/sem/{LANG}/postgen_qc_sem_{DS}_{MODEL}.csv"
-PATH_TO_PERTURB_DATA_PARENT = "/raid/mphute6/HalfTruths/p2p_data/Images/"
+PATH_TO_ORIG_DATA_PARENT = "" #path to original images 
+CSV_POSTGEN_QC =  "" #path to save postgen quality check results
+PATH_TO_PERTURB_DATA_PARENT = "" #path to perturbed images
 EDIT_EXTENSION = ".jpeg"
 DS_EXTENSION = formats[DS]
 
