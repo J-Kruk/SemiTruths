@@ -21,7 +21,7 @@ The input data sample is sourced from existing semantic segmentation datasets (A
 
 To simulate the data generation process on a small sample:
 ```
-python generate_semi_truths.py 
+sh generate_semi_truths.sh
 ```
 NOTE: An argparse is defined within this script that can be edited to reflect different data locations.
 
