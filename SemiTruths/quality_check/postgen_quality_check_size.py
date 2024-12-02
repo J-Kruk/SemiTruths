@@ -1,38 +1,160 @@
+import os
 import torch
 from PIL import Image
 from utils import *
 from tqdm import tqdm
+import pandas as pd
 import pdb
-from tqdm import tqdm
-import csv
-import os
 
-torch.set_default_tensor_type('torch.cuda.FloatTensor') 
+torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
-DS = 'SUN_RGBD'
-MODEL = "StableDiffusion_v5"
 
-CSV_READ_FILE = "" # metadata for generated images
+def post_qual_check(
+    img_dataframe,
+    DS,
+    PATH_TO_DATA_PARENT,
+    PATH_TO_PERTURB_DATA_PARENT,
+    DS_EXTENSION,
+    EDIT_EXTENSION,
+    CSV_POSTGEN_QC,
+):
 
-column_map ={
-    'image':0,
-    'mask':1,
-    'img_id':2,
-    'mask_id':3,
-    'mask_name':4,
-    'ratio':5,
-    'entities':6,
-    'classes':7,
-    'perturbed_label':8,
-    'sem_magnitude':9,
-    'quality_flag':10,
-    'dataset':11,
-    'method':12,
-    'model':13,
-    'perturbed_path':14
-}
+    for i, row in tqdm(img_dataframe.iterrows(), total=len(img_dataframe)):
+        if type(row["cap2_img2"]) == float:
+            model = row["model"]
 
-DS_extemsion_dict ={
+            try:
+                orig_img_path = os.path.join(
+                    PATH_TO_DATA_PARENT, DS, row["image_id"] + DS_EXTENSION
+                )
+            except KeyError:
+                orig_img_path = os.path.join(
+                    PATH_TO_DATA_PARENT, DS, row["img_id"] + DS_EXTENSION
+                )
+            orig_img = Image.open(orig_img_path)
+
+            orig_caption = row["mask_name"]
+            if len(orig_img.getbands()) != 3:
+                return
+
+            brisque_score_orig = brisque_Score(orig_img)
+            # if perturbed image path does not exist, return:
+            if not os.path.exists(
+                os.path.join(
+                    PATH_TO_PERTURB_DATA_PARENT,
+                    row["dataset"],
+                    model,
+                    row["mask_id"] + "_" + DS + "_" + model + EDIT_EXTENSION,
+                )
+            ):
+                print("perturbed image does not exist")
+                print(
+                    os.path.join(
+                        PATH_TO_PERTURB_DATA_PARENT,
+                        row["dataset"],
+                        model,
+                        row["mask_id"] + "_" + DS + "_" + model + EDIT_EXTENSION,
+                    )
+                )
+                return
+
+            perturbed_img_path = os.path.join(
+                PATH_TO_PERTURB_DATA_PARENT,
+                row["dataset"],
+                model,
+                row["mask_id"] + "_" + DS + "_" + model + EDIT_EXTENSION,
+            )
+            perturbed_img = Image.open(perturbed_img_path)
+
+            if not perturbed_img.getbbox():
+                return
+
+            perturbed_caption = row["perturbed_label"]
+
+            cap2_img2 = calculate_image_caption_clip_similarity(
+                perturbed_img, perturbed_caption
+            )
+            direct_sim = calculate_directional_similarity(
+                orig_img, orig_caption, perturbed_img, perturbed_caption
+            )
+            img1_img2 = calculate_image_similarity(orig_img, perturbed_img)
+            brisque_score = brisque_Score(perturbed_img)
+
+            img_dataframe.at[i, "cap2_img2"] = cap2_img2
+            img_dataframe.at[i, "direct_sim"] = direct_sim
+            img_dataframe.at[i, "img1_img2"] = img1_img2
+            img_dataframe.at[i, "brisque_score_orig"] = brisque_score_orig
+            img_dataframe.at[i, "brisque_score"] = brisque_score
+
+            if i % 25 == 0:
+                img_dataframe.to_csv(CSV_POSTGEN_QC, index=False)
+
+        img_dataframe.to_csv(CSV_POSTGEN_QC, index=False)
+
+
+def postgen_quality_check(
+    CSV_READ_FILE,
+    CSV_POSTGEN_QC,
+    DS,
+    PATH_TO_DATA_PARENT,
+    PATH_TO_PERTURB_DATA_PARENT,
+    DS_EXTENSION,
+    EDIT_EXTENSION,
+):
+    if os.path.exists(CSV_POSTGEN_QC):
+        gen_image_df = pd.read_csv(CSV_POSTGEN_QC)
+    else:
+        gen_image_df = pd.read_csv(CSV_READ_FILE)
+        quality_columns = [
+            "cap2_img2",
+            "direct_sim",
+            "img1_img2",
+            "brisque_score_orig",
+            "brisque_score_perturb",
+        ]
+        for q_c in quality_columns:
+            gen_image_df[q_c] = pd.NA
+
+    post_qual_check(
+        gen_image_df,
+        DS,
+        PATH_TO_DATA_PARENT,
+        PATH_TO_PERTURB_DATA_PARENT,
+        DS_EXTENSION,
+        EDIT_EXTENSION,
+        CSV_POSTGEN_QC,
+    )
+
+
+if __name__ == "__main__":
+    # DS = "SUN_RGBD"
+    # MODEL = "StableDiffusion_v5"
+    # CSV_READ_FILE = "/home/jkruk3/how_fake/SemiTruths/data/gen/inpainting/SUN_RGBD/StableDiffusion_v5/SUN_RGBD_StableDiffusion_v5_meta.csv"  # metadata for generated images
+    # PATH_TO_DATA_PARENT = "/home/jkruk3/how_fake/SemiTruths/data/input/images"  # path to original images parent directory
+    # CSV_POSTGEN_QC = f"/home/jkruk3/how_fake/SemiTruths/data/gen/qc_meta_files/{DS}_{MODEL}_meta_qc_size.csv"  # path to save postgen quality check results
+    # PATH_TO_PERTURB_DATA_PARENT = "/home/jkruk3/how_fake/SemiTruths/data/gen/inpainting"  # path to perturbed images parent directory
+    # EDIT_EXTENSION = ".png"
+
+    PATH_TO_DATA_PARENT = "/data/jkruk3/Half_Truths_Dataset/images"
+    CSV_POSTGEN_QC_ = (
+        "/data/jkruk3/half-truths/mistral_inpainting/quality_checked_files"
+    )
+    PATH_TO_PERTURB_DATA_PARENT = "/data/jkruk3/half-truths/mistral_inpainting"
+    EDIT_EXTENSION = ".png"
+
+    DATASETS = [
+        "ADE20K",
+        # "CelebAHQ"
+    ]
+    MODELS = [
+        "Kandinsky_2_2",  #
+        # "StableDiffusion_v4",
+        # "StableDiffusion_XL",
+        # "StableDiffusion_v5",  #
+        # "OpenJourney",
+    ]
+
+    DS_extemsion_dict = {
         "ADE20K": ".jpg",
         "CelebAHQ": ".jpg",
         "CityScapes": ".png",
@@ -41,106 +163,19 @@ DS_extemsion_dict ={
         "SUN_RGBD": ".jpg",
     }
 
-PATH_TO_DATA_PARENT = "" #path to original images parent directory
-CSV_POSTGEN_QC = "" #path to save postgen quality check results
-PATH_TO_PERTURB_DATA_PARENT = "" #path to perturbed images parent directory
-EDIT_EXTENSION = ".png"
+    for DS in DATASETS:
+        for MODEL in MODELS:
+            CSV_READ_FILE = f"{PATH_TO_PERTURB_DATA_PARENT}/{DS}/{DS}_{MODEL}_meta.csv"
+            CSV_POSTGEN_QC = f"{CSV_POSTGEN_QC_}/{DS}/{DS}_{MODEL}_meta_qc_size.csv"
+            if not os.path.exists(f"{CSV_POSTGEN_QC_}/{DS}"):
+                os.mkdir(f"{CSV_POSTGEN_QC_}/{DS}")
 
-def post_qual_check_row(row, 
-                           writer, 
-                           DS, 
-                           column_map, 
-                           PATH_TO_DATA_PARENT, 
-                           PATH_TO_PERTURB_DATA_PARENT, 
-                           DS_EXTENSION, 
-                           EDIT_EXTENSION
-                           ):
-
-    if len(row[column_map['image']]):
-            method = row[column_map['method']]
-            model = row[column_map['model']]
-            
-            # remove model from orig path when just running independently
-            # orig_img_path = os.path.join(PATH_TO_DATA_PARENT, DS,model, row[column_map['img_id']]+DS_EXTENSION)
-            try:
-                orig_img_path = os.path.join(PATH_TO_DATA_PARENT, DS, row[column_map['img_id']]+DS_EXTENSION)
-                orig_img = Image.open(orig_img_path)
-                orig_caption = row[column_map['mask_name']]
-                if len(orig_img.getbands())!=3:
-                    return
-                brisque_score_orig = brisque_Score(orig_img)
-                #if perturbed image path does not exist, return:
-                if not os.path.exists(os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION)):
-                    print("perturbed image does not exist")
-                    print(os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION))
-                    return
-
-                perturbed_img_path = os.path.join(PATH_TO_PERTURB_DATA_PARENT , row[column_map['dataset']], model ,row[column_map['mask_id']]+"_"+DS +"_"+model + EDIT_EXTENSION)
-                perturbed_img = Image.open(perturbed_img_path)
-
-                if not perturbed_img.getbbox():
-                    return
-
-                perturbed_caption = row[column_map['perturbed_label']]
-
-                cap2_img2 = calculate_image_caption_clip_similarity(perturbed_img , perturbed_caption)
-                direct_sim = calculate_directional_similarity(orig_img , orig_caption , perturbed_img , perturbed_caption)
-                img1_img2  = calculate_image_similarity(orig_img , perturbed_img)
-                brisque_score = brisque_Score(perturbed_img)
-                row.extend([cap2_img2, direct_sim, img1_img2, brisque_score_orig, brisque_score])
-            
-                writer.writerow(row)
-
-            except Exception as e:
-                
-                print(e)
-                return
-            
-
-
-def postgen_quality_check(CSV_READ_FILE,
-                          CSV_POSTGEN_QC,
-                          DS,
-                          column_map,
-                          PATH_TO_DATA_PARENT,
-                          PATH_TO_PERTURB_DATA_PARENT,
-                          DS_EXTENSION,
-                          EDIT_EXTENSION): 
-    f = open(CSV_READ_FILE, 'r')
-    file =  csv.reader(f)
-    header = next(file)
-
-    header_qc = header
-    header_qc.extend(['cap2_img2', 'direct_sim','img1_img2','brisque_score_orig','brisque_score_perturb'])
-
-    out_f = open(CSV_POSTGEN_QC, 'w')
-    writer = csv.writer(out_f)
-    writer.writerow(header_qc)
-
-    for row in tqdm(file):
-        post_qual_check_row(row, 
-                           writer, 
-                           DS, 
-                           column_map, 
-                           PATH_TO_DATA_PARENT, 
-                           PATH_TO_PERTURB_DATA_PARENT, 
-                           DS_EXTENSION, 
-                           EDIT_EXTENSION
-                           )
-        
-    f.close()
-    out_f.close()
-
-def main():
-    DS_EXTENSION = DS_extemsion_dict[DS]
-    postgen_quality_check(CSV_READ_FILE,
-                          CSV_POSTGEN_QC,
-                          DS,
-                          column_map,
-                          PATH_TO_DATA_PARENT,
-                          PATH_TO_PERTURB_DATA_PARENT,
-                          DS_EXTENSION,
-                          EDIT_EXTENSION)
-
-if __name__ == "__main__":
-    main()
+            postgen_quality_check(
+                CSV_READ_FILE,
+                CSV_POSTGEN_QC,
+                DS,
+                PATH_TO_DATA_PARENT,
+                PATH_TO_PERTURB_DATA_PARENT,
+                DS_extemsion_dict[DS],
+                EDIT_EXTENSION,
+            )
