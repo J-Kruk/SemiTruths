@@ -127,14 +127,6 @@ def postgen_quality_check(
 
 
 if __name__ == "__main__":
-    # DS = "SUN_RGBD"
-    # MODEL = "StableDiffusion_v5"
-    # CSV_READ_FILE = "/home/jkruk3/how_fake/SemiTruths/data/gen/inpainting/SUN_RGBD/StableDiffusion_v5/SUN_RGBD_StableDiffusion_v5_meta.csv"  # metadata for generated images
-    # PATH_TO_DATA_PARENT = "/home/jkruk3/how_fake/SemiTruths/data/input/images"  # path to original images parent directory
-    # CSV_POSTGEN_QC = f"/home/jkruk3/how_fake/SemiTruths/data/gen/qc_meta_files/{DS}_{MODEL}_meta_qc_size.csv"  # path to save postgen quality check results
-    # PATH_TO_PERTURB_DATA_PARENT = "/home/jkruk3/how_fake/SemiTruths/data/gen/inpainting"  # path to perturbed images parent directory
-    # EDIT_EXTENSION = ".png"
-
     PATH_TO_DATA_PARENT = "/data/jkruk3/Half_Truths_Dataset/images"
     CSV_POSTGEN_QC_ = (
         "/data/jkruk3/half-truths/mistral_inpainting/quality_checked_files"
