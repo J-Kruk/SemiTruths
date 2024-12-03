@@ -35,9 +35,9 @@ def post_qual_check(
 
             orig_caption = row["mask_name"]
             if len(orig_img.getbands()) != 3:
-                return
+                print(f"Image shape error for:   {orig_img_path}")
+                continue
 
-            brisque_score_orig = brisque_Score(orig_img)
             # if perturbed image path does not exist, return:
             if not os.path.exists(
                 os.path.join(
@@ -56,7 +56,6 @@ def post_qual_check(
                         row["mask_id"] + "_" + DS + "_" + model + EDIT_EXTENSION,
                     )
                 )
-                return
 
             perturbed_img_path = os.path.join(
                 PATH_TO_PERTURB_DATA_PARENT,
@@ -64,11 +63,8 @@ def post_qual_check(
                 model,
                 row["mask_id"] + "_" + DS + "_" + model + EDIT_EXTENSION,
             )
+
             perturbed_img = Image.open(perturbed_img_path)
-
-            if not perturbed_img.getbbox():
-                return
-
             perturbed_caption = row["perturbed_label"]
 
             cap2_img2 = calculate_image_caption_clip_similarity(
@@ -78,13 +74,14 @@ def post_qual_check(
                 orig_img, orig_caption, perturbed_img, perturbed_caption
             )
             img1_img2 = calculate_image_similarity(orig_img, perturbed_img)
-            brisque_score = brisque_Score(perturbed_img)
+            brisque_score_perturb = brisque_Score(perturbed_img)
+            brisque_score_orig = brisque_Score(orig_img)
 
             img_dataframe.at[i, "cap2_img2"] = cap2_img2
             img_dataframe.at[i, "direct_sim"] = direct_sim
             img_dataframe.at[i, "img1_img2"] = img1_img2
             img_dataframe.at[i, "brisque_score_orig"] = brisque_score_orig
-            img_dataframe.at[i, "brisque_score"] = brisque_score
+            img_dataframe.at[i, "brisque_score_perturb"] = brisque_score_perturb
 
             if i % 25 == 0:
                 img_dataframe.to_csv(CSV_POSTGEN_QC, index=False)
