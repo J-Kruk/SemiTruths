@@ -80,7 +80,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--output_dir_pert",
-    default="./data/gen",
+    default="./data",
     help="Directory to save metadata with perturbed mask labels.",
 )
 parser.add_argument(
@@ -127,24 +127,22 @@ file_type_map = {
 }
 
 
-print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
-mask_pert.perturb_mask_labels(args)
+# print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
+# mask_pert.perturb_mask_labels(args)
 
 
-print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
-input_data_ds_qual = llava_inpaint.filter_labels(
-    args.pert_file, args.input_metadata_pth
-)
+# print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
+# input_data_ds_qual = llava_inpaint.filter_labels(args.pert_file, args.input_metadata_pth)
 
-for diff_model in diff_models:
-    llava_inpaint.prepare_directory_struct(diff_model, args.output_dir_aug)
-    gen_meta = llava_inpaint.create_img_augmentations(
-        input_data_ds_qual,
-        args.input_data_pth,
-        llava_inpaint.diff_model_dict,
-        diff_model,
-        args.output_dir_aug,
-    )
+# for diff_model in diff_models:
+#     llava_inpaint.prepare_directory_struct(diff_model, args.output_dir_aug)
+#     gen_meta = llava_inpaint.create_img_augmentations(
+#         input_data_ds_qual,
+#         args.input_data_pth,
+#         llava_inpaint.diff_model_dict,
+#         diff_model,
+#         args.output_dir_aug,
+#     )
 
 
 print("\nSTEP (3): Augmenting Images via Prompt-Based Editing")
@@ -172,6 +170,45 @@ for i, dm_ in enumerate(diff_models_LANCE):
                 "./data/editcap_dict.json",
                 "--gencap_dict_path",
                 "./data/prompt-prompt/gencap_dict.json",
+            ],
+        )
+
+pdb.set_trace()
+
+print("\nSTEP (4): Computing Augmentation Metadata & Change Metrics")
+subprocess.run(
+    [
+        "python",
+        "change_metrics/change_metrics.py",
+        "--root_csv",
+        args.metadata,
+        "--root_dir",
+        args.input_data,
+        "--save_dir",
+        args.input_data,
+    ],
+)
+
+print("\nSTEP (5): Computing Quality Metrics")
+for i, dm_ in enumerate(diff_models):
+    print(f"\n     (5.{i+1}) Quality Checking Images from {dm_}\n")
+    for ds in list(file_type_map.keys()):
+        subprocess.run(
+            [
+                "python",
+                "quality_check/postgen_quality_check.py",
+                "--metadata",
+                args.metadata,
+                "--input_data_parent",
+                args.input_data,
+                "--output_file",
+                args.qual_output_path,
+                "--pert_data_parent",
+                args.output_dir_aug,
+                "--dataset",
+                ds,
+                "--model",
+                dm_,
             ],
         )
 

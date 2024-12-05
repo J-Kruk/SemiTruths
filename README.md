@@ -1,9 +1,10 @@
 # Semi-Truths
 Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change
 
+<img width="500px" src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 10th 2024." />
+
 <img width="500px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
 
-**PLEASE NOTE: This repository is briefly undergoing maintenance!!**
 
 ## Get Started
 
@@ -21,7 +22,7 @@ The input data sample is sourced from existing semantic segmentation datasets (A
 
 To simulate the data generation process on a small sample:
 ```
-python generate_semi_truths.py 
+sh generate_semi_truths.sh
 ```
 NOTE: An argparse is defined within this script that can be edited to reflect different data locations.
 
