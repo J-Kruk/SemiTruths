@@ -26,7 +26,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
 import sys
+import pdb
+import torch
+import torchvision
+
+print("torch version:  ", torch.__version__)
+print("torchvision version:  ", torchvision.__version__)
+
 import SemiTruths
+import SemiTruths.image_augmentation.inpainting.llava_mask_label_pert as mask_pert
+import SemiTruths.image_augmentation.inpainting.llava_guided_inpainting as llava_inpaint
 
 # sys.path.append("image_augmentation/")
 # sys.path.append("image_augmentation/inpainting")
@@ -35,19 +44,30 @@ import SemiTruths
 import subprocess
 import pandas as pd
 import argparse
+import pdb
 
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+##################################################################
+# Input Data Locations
+##################################################################
+
 parser.add_argument(
-    "--input_data",
-    default="../../data/input",
+    "--input_data_pth",
+    default="./data/input",
     help="Path to input media.",
 )
 parser.add_argument(
-    "--metadata",
-    default="../../data/input/metadata.csv",
+    "--input_metadata_pth",
+    default="./data/input/metadata.csv",
     help="Path to input metadata.",
 )
+
+##################################################################
+# Inpainting Augmentation Pipeline
+##################################################################
+
 parser.add_argument(
     "--llava_model",
     default="liuhaotian/llava-v1.6-mistral-7b",
@@ -55,35 +75,39 @@ parser.add_argument(
 )
 parser.add_argument(
     "--llava_cache_dir",
-    default="../llava_cache",
+    default="./llava_cache",
     help="Directory to store LLaVA cache files.",
 )
 parser.add_argument(
     "--output_dir_pert",
-    default="../../data",
+    default="./data/gen",
     help="Directory to save metadata with perturbed mask labels.",
 )
 parser.add_argument(
     "--output_dir_aug",
-    default="../../data/gen",
+    default="./data/gen",
     help="Directory to save metadata with perturbed mask labels.",
 )
 parser.add_argument(
     "--pert_file",
-    default="../../data/metadata_pert.json",
+    default="./data/metadata_pert.json",
     help="Path to json containing label perturbations.",
 )
 parser.add_argument(
-    "--lance_path",
-    default="../../data",
+    "--lance_pth",
+    default="./data",
     help="Path to where LANCE model will be saved.",
 )
 parser.add_argument(
     "--qual_output_path",
-    default="../../data/postgen_quality_check.csv",
+    default="./data/postgen_quality_check.csv",
     help="Path to output quality checked metadata.",
 )
 args = parser.parse_args()
+
+##################################################################
+# Diffusion Model Definitions & Keys
+##################################################################
 
 diff_models = [
     "StableDiffusion_v4",
@@ -104,42 +128,24 @@ file_type_map = {
 
 
 print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
+mask_pert.perturb_mask_labels(args)
 
-
-subprocess.run(
-    [
-        "python",
-        "image_augmentation/inpainting/llava_mask_label_pert.py",
-        "--input_data",
-        args.input_data,
-        "--metadata",
-        args.metadata,
-        "--llava_model",
-        args.llava_model,
-        "--llava_cache_dir",
-        args.llava_cache_dir,
-        "--output_dir",
-        args.output_dir_pert,
-    ],
-)
 
 print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
-for i, dm_ in enumerate(diff_models):
-    print(f"\n     (2.{i+1}) Inpainting with {dm_}\n")
-    subprocess.run(
-        [
-            "python",
-            "image_augmentation/inpainting/llava_guided_inpaiting.py",
-            "--diff_model",
-            dm_,
-            "--input_data",
-            args.input_data,
-            "--output_dir",
-            args.output_dir_aug,
-            "--pert_file",
-            args.pert_file,
-        ],
+input_data_ds_qual = llava_inpaint.filter_labels(
+    args.pert_file, args.input_metadata_pth
+)
+
+for diff_model in diff_models:
+    llava_inpaint.prepare_directory_struct(diff_model, args.output_dir_aug)
+    gen_meta = llava_inpaint.create_img_augmentations(
+        input_data_ds_qual,
+        args.input_data_pth,
+        llava_inpaint.diff_model_dict,
+        diff_model,
+        args.output_dir_aug,
     )
+
 
 print("\nSTEP (3): Augmenting Images via Prompt-Based Editing")
 for i, dm_ in enumerate(diff_models_LANCE):
@@ -148,61 +154,24 @@ for i, dm_ in enumerate(diff_models_LANCE):
         subprocess.run(
             [
                 "python",
-                "image_augmentation/LANCE/main.py",
+                "-m",
+                "SemiTruths.image_augmentation.prompt_based_editing.prompt_based_image_aug",
                 "--dset_name",
                 "ImageFolder",
                 "--img_dir",
-                args.input_data,
+                args.input_data_pth,
                 "--json_path",
-                args.metadata,
+                args.input_metadata_pth,
                 "--ldm_type",
                 dm_,
                 "--lance_path",
-                args.lance_path,
+                args.lance_pth,
                 "--dataset",
                 ds,
                 "--editcap_dict_path",
-                "../../data/editcap_dict.json",
+                "./data/editcap_dict.json",
                 "--gencap_dict_path",
-                "../../data/prompt-prompt/gencap_dict.json",
-            ],
-        )
-
-
-print("\nSTEP (4): Computing Augmentation Metadata & Change Metrics")
-subprocess.run(
-    [
-        "python",
-        "change_metrics/change_metrics.py",
-        "--root_csv",
-        args.metadata,
-        "--root_dir",
-        args.input_data,
-        "--save_dir",
-        args.input_data,
-    ],
-)
-
-print("\nSTEP (5): Computing Quality Metrics")
-for i, dm_ in enumerate(diff_models):
-    print(f"\n     (5.{i+1}) Quality Checking Images from {dm_}\n")
-    for ds in list(file_type_map.keys()):
-        subprocess.run(
-            [
-                "python",
-                "quality_check/postgen_quality_check.py",
-                "--metadata",
-                args.metadata,
-                "--input_data_parent",
-                args.input_data,
-                "--output_file",
-                args.qual_output_path,
-                "--pert_data_parent",
-                args.output_dir_aug,
-                "--dataset",
-                ds,
-                "--model",
-                dm_,
+                "./data/prompt-prompt/gencap_dict.json",
             ],
         )
 

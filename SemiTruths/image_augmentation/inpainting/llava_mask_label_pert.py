@@ -59,7 +59,7 @@ def perturb_mask_labels(args):
     VIZ_DIR = os.getcwd()
 
     ## DATA LOADING ##
-    metadata = load_data_flat(args.input_data)
+    metadata = load_data_flat(args.input_data_pth)
     processed_metadata = {}
     print(f"Number of images for mask label perturbation: {len(metadata)}\n")
 
@@ -109,7 +109,7 @@ def perturb_mask_labels(args):
     processed = get_llava_perts(
         metadata,
         processed_metadata,
-        args.input_data,
+        args.input_data_pth,
         OUTPATH,
         context,
         args_llava,
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
-        "--input_data",
+        "--input_data_pth",
         default="../../data/input",
         help="Path to input media.",
     )

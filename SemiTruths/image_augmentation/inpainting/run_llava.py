@@ -3,24 +3,24 @@ import torch
 import sys
 import pdb
 
-from SemiTruths.image_augmentation.LLaVA.llava.constants import (
+from LLaVA.llava.constants import (
     IMAGE_TOKEN_INDEX,
     DEFAULT_IMAGE_TOKEN,
     DEFAULT_IM_START_TOKEN,
     DEFAULT_IM_END_TOKEN,
     IMAGE_PLACEHOLDER,
 )
-from SemiTruths.image_augmentation.LLaVA.llava.conversation import (
+from LLaVA.llava.conversation import (
     conv_templates,
     SeparatorStyle,
 )
-from SemiTruths.image_augmentation.LLaVA.llava.model.builder import (
+from LLaVA.llava.model.builder import (
     load_pretrained_model,
 )
 
 # from builder import load_pretrained_model
-from SemiTruths.image_augmentation.LLaVA.llava.utils import disable_torch_init
-from SemiTruths.image_augmentation.LLaVA.llava.mm_utils import (
+from LLaVA.llava.utils import disable_torch_init
+from LLaVA.llava.mm_utils import (
     process_images,
     tokenizer_image_token,
     get_model_name_from_path,

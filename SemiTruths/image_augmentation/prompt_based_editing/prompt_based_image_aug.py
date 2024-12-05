@@ -29,10 +29,10 @@ import pkgutil
 
 # sys.path.append("../../../SemiTruths")
 from accelerate.logging import get_logger
-from SemiTruths.image_augmentation.LANCE.lance.generate_captions import *
-from SemiTruths.image_augmentation.LANCE.lance.edit_captions import *
-from SemiTruths.image_augmentation.LANCE.lance.edit_images import *
-from SemiTruths.image_augmentation.LANCE.lance.utils.misc_utils import *
+from LANCE.lance.generate_captions import *
+from LANCE.lance.edit_captions import *
+from LANCE.lance.edit_images import *
+from LANCE.lance.utils.misc_utils import *
 
 accelerator = Accelerator()
 
@@ -50,14 +50,14 @@ def main(args: argparse.Namespace):
         logger.info(f"=> Initializing LANCE")
 
     if args.dset_name == "HardImageNet":
-        import SemiTruths.image_augmentation.LANCE.datasets.hard_imagenet as ha
+        import LANCE.datasets.hard_imagenet as ha
 
         dset = ha.HardImageNet(args.img_dir)
         if args.verbose:
             logger.info(f"=> Loaded dataset from {args.img_dir}")
 
     elif args.dset_name == "ImageFolder":
-        import SemiTruths.image_augmentation.LANCE.datasets.custom_imagefolder as cif
+        import LANCE.datasets.custom_imagefolder as cif
 
         dset = cif.CustomImageFolder(args.img_dir, args.json_path, args.dataset)
         if args.verbose:
@@ -259,19 +259,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--llama_finetuned_path",
         type=str,
-        default="SemiTruths/image_augmentation/LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
+        default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
         help="Path to finetuning llama model in lightning format",
     )
     parser.add_argument(
         "--llama_pretrained_path",
         type=str,
-        default="SemiTruths/image_augmentation/LANCE/checkpoints/caption_editing/lit-llama.pth",
+        default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
         help="Path to pretrained llama model in lightning format",
     )
     parser.add_argument(
         "--llama_tokenizer_path",
         type=str,
-        default="SemiTruths/image_augmentation/LANCE/checkpoints/caption_editing/tokenizer.model",
+        default="LANCE/checkpoints/caption_editing/tokenizer.model",
         help="Path to LLAMA tokenizer model",
     )
     parser.add_argument(
