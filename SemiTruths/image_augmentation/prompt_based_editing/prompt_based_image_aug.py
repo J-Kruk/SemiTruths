@@ -37,18 +37,48 @@ from LANCE.lance.utils.misc_utils import *
 accelerator = Accelerator()
 
 
-def main(args: argparse.Namespace):
+def configure_lance_args(parser, semi_args, diff_model, dataset):
+    """
+    To make LANCE pipeline arguments align with those
+    within the SemiTruths code base, we dynamically
+    create new arguement that LANCE code expects at input.
+    """
+    parser.add_argument(
+        "--ldm_type",
+        type=str,
+        default=semi_args.diff_model,
+        help="Latent Diffusion Model to use",
+    )
+    parser.add_argument(
+        "--img_dir",
+        type=str,
+        default=semi_args.input_data_pth,
+        help="ImageFolder containing images",
+    )
+    parser.add_argument(
+        "--json_path",
+        type=str,
+        default=semi_args.input_metadata_pth,
+        help="Path to input metadata json",
+    )
+    parser.add_argument(
+        "--ldm_type",
+        type=str,
+        default=diff_model,
+        help="Path to input metadata json",
+    )
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        default=dataset,
+        help="Dataset to parse",
+    )
 
-    logging.info(accelerator.state, main_process_only=True)
-    device = accelerator.device
+    args = parser.parse_args()
+    return args
 
-    if args.verbose:
-        logger = get_logger("lance")
-        for arg, value in sorted(vars(args).items()):
-            logger.debug("{}: {}", arg, value)
-        logger.info("------------------------------------------------")
-        logger.info(f"=> Initializing LANCE")
 
+def setup_data(args: argparse.Namespace, logger):
     if args.dset_name == "HardImageNet":
         import LANCE.datasets.hard_imagenet as ha
 
@@ -77,6 +107,8 @@ def main(args: argparse.Namespace):
         drop_last=True,
     )
 
+
+def initialize_dicts(args: argparse.Namespace, logger):
     gencap_dict = {}
     if args.load_captions:
         if not os.path.exists(args.gencap_dict_path):
@@ -93,10 +125,12 @@ def main(args: argparse.Namespace):
         editcap_dict = json.load(open(args.editcap_dict_path, "r"))
         if args.verbose:
             logger.info(f"=> Loaded edited captions from {args.editcap_dict_path}")
+    return gencap_dict, editcap_dict
 
+
+def prompt_based_edit_modules(args: argparse.Namespace, logger, device):
     if args.verbose:
         logger.info(f"=> Initializing image editor")
-
     image_editor = ImageEditor(
         args,
         device,
@@ -120,6 +154,8 @@ def main(args: argparse.Namespace):
             verbose=args.verbose,
             name=args.gencaption_name,
         )
+    else:
+        caption_generator = None
 
     if not args.load_caption_edits:
         if args.verbose:
@@ -127,15 +163,30 @@ def main(args: argparse.Namespace):
         caption_editor = CaptionEditor(
             args, device, verbose=args.verbose, perturbation_type=args.perturbation_type
         )
+    else:
+        caption_editor = None
+    return image_editor, caption_generator, caption_editor
 
-    model = image_editor.model
-    dataloader, model = accelerator.prepare(dataloader, model)
+
+def generate_edits(
+    args: argparse.Namespace,
+    logger,
+    dataloader,
+    image_editor,
+    caption_generator,
+    caption_editor,
+    gencap_dict,
+    editcap_dict,
+):
+
     for paths, targets in tqdm(dataloader, total=len(dataloader)):
         # Generate caption
         img_path, clsname = paths[0], targets[0]
         if len(np.array(Image.open(img_path)).shape) < 3:
             continue  # Ignore grayscale images
-        out_dir = os.path.join(args.lance_path, "prompt-based-editing", args.ldm_type)
+        out_dir = os.path.join(
+            args.lance_output_path, "prompt-based-editing", args.ldm_type
+        )
         os.makedirs(out_dir, exist_ok=True)
 
         if args.verbose:
@@ -186,13 +237,51 @@ def main(args: argparse.Namespace):
         )
         del x_t, uncond_embeddings
         accelerator.free_memory()
+    return gencap_dict, editcap_dict, args
 
+
+def save_jsons(gencap_dict, editcap_dict, args):
     save_path_edited = os.path.join(
         out_dir, "edited_captions", args.json_path.split("/")[-1]
     )
     json.dump(gencap_dict, open(args.gencap_dict_path, "w"), indent=4)
     json.dump(editcap_dict, open(args.editcap_dict_path, "w"), indent=4)
-    json.dump(vars(args), open(args.lance_path + "/args.json", "w"), indent=4)
+    json.dump(vars(args), open(args.lance_output_path + "/args.json", "w"), indent=4)
+
+
+def create_prompt_based_edits(args: argparse.Namespace):
+
+    logging.info(accelerator.state, main_process_only=True)
+    device = accelerator.device
+
+    if args.verbose:
+        logger = get_logger("lance")
+        for arg, value in sorted(vars(args).items()):
+            logger.debug("{}: {}", arg, value)
+        logger.info("------------------------------------------------")
+        logger.info(f"=> Initializing LANCE")
+
+    dataloader = setup_data(args, logger)
+    gencap_dict, editcap_dict = initialize_dicts(args, logger)
+
+    image_editor, caption_generator, caption_editor = prompt_based_edit_modules(
+        args, logger, device
+    )
+
+    model = image_editor.model
+    dataloader, model = accelerator.prepare(dataloader, model)
+    gencap_dict, editcap_dict, args = generate_edits(
+        args,
+        logger,
+        dataloader,
+        image_editor,
+        caption_generator,
+        caption_editor,
+        gencap_dict,
+        editcap_dict,
+    )
+
+    save_jsons(gencap_dict, editcap_dict, args)
 
 
 if __name__ == "__main__":
@@ -202,22 +291,18 @@ if __name__ == "__main__":
     # Experiment identifier
     ###########################################################################
 
-    parser.add_argument("--exp_id", type=str, default="lance")
     parser.add_argument(
-        "--dset_name",
+        "--dataset_type",
         type=str,
-        help="Dataset name: HardImageNet or ImageFolder",
-        default="HardImageNet",
+        help="Dataset type: HardImageNet or ImageFolder",
+        default="ImageFolder",
     )
     parser.add_argument("--img_dir", type=str, help="ImageFolder containing images")
     parser.add_argument(
         "--json_path", type=str, default="outputs", help="Path to input metadata json"
     )
     parser.add_argument(
-        "--csv", type=str, default="outputs", help="Path to csv containing image list"
-    )
-    parser.add_argument(
-        "--lance_path",
+        "--lance_output_path",
         type=str,
         default="outputs",
         help="LANCE output directory",
@@ -260,7 +345,7 @@ if __name__ == "__main__":
         "--llama_finetuned_path",
         type=str,
         # default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
-        default="/data/jkruk3/half-truths/lance_checkpoints/lit-llama.pth",
+        default="./LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
         help="Path to finetuning llama model in lightning format",
     )
     parser.add_argument(
@@ -273,7 +358,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--llama_tokenizer_path",
         type=str,
-        default="LANCE/checkpoints/caption_editing/tokenizer.model",
+        default="./LANCE/checkpoints/caption_editing/tokenizer.model",
         help="Path to LLAMA tokenizer model",
     )
     parser.add_argument(
@@ -343,4 +428,4 @@ if __name__ == "__main__":
     ###########################################################################
 
     args = parser.parse_args()
-    main(args)
+    create_prompt_based_edits(args)

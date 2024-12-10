@@ -53,9 +53,9 @@ def perturb_mask_labels(args):
     Uses LLaVA to perturb entity mask labels to reflect various
     magnitudes of changes.
     """
-    if not os.path.exists(args.output_dir_pert):
-        os.mkdir(args.output_dir_pert)
-    OUTPATH = os.path.join(args.output_dir_pert, "metadata_pert.json")
+    if not os.path.exists(args.output_dir_mask_pert):
+        os.mkdir(args.output_dir_mask_pert)
+    OUTPATH = os.path.join(args.output_dir_mask_pert, "metadata_pert.json")
     VIZ_DIR = os.getcwd()
 
     ## DATA LOADING ##
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         help="Directory to store LLaVA cache files.",
     )
     parser.add_argument(
-        "--output_dir_pert",
+        "--output_dir_mask_pert",
         default="../../data",
         help="Directory to save metadata with perturbed mask labels.",
     )

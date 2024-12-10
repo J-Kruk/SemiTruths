@@ -1,0 +1,47 @@
+###################################################
+# ESSENTIAL PARAMETERS
+###################################################
+
+# Input Data Locations
+#-------------------------------------------------#
+input_data_pth: ./data/input  # Path to input media.
+input_metadata_pth: ./data/input/metadata.csv  #Path to input metadata.
+
+# Inpainting Augmentation Pipeline
+#-------------------------------------------------#
+llava_model: liuhaotian/llava-v1.6-mistral-7b
+output_dir_mask_pert: ./data/gen
+output_dir_img_aug: ./data/gen
+mask_pert_file: ./data/gen/metadata_pert.json
+
+# Prompt-based Editing Pipeline
+#-------------------------------------------------#
+llama_finetuned_path: ./LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth
+llama_pretrained_path: /data/jkruk3/half-truths/lance_checkpoints/lit-llama.pth
+llama_tokenizer_path: ./LANCE/checkpoints/caption_editing/tokenizer.model
+lance_output_path: ./data/gen  # LANCE output directory
+gencap_dict_path: ./data/prompt-prompt/gencap_dict.json  # Path to JSON file containing image captions
+load_captions: True  # Load captions from path (intermediate save)
+editcap_dict_path: ./data/editcap_dict.json  # Path to JSON file containing edited captions
+load_caption_edits: True  # Load captions from path (intermediate save)
+
+###################################################
+# NON-ESSENTIAL PARAMETERS
+###################################################
+
+# Inpainting Augmentation Pipeline
+#-------------------------------------------------#
+llava_cache_dir: ./llava_cache
+
+# Prompt-based Editing Pipeline (LANCE)
+#-------------------------------------------------#
+dataset_type: ImageFolder # Dataloader loader type: HardImageNet or ImageFolder
+gencaption_name: blip_caption  # Name of image captioning system.
+perturbation_type: all  # Type of perturbation to stress-test against
+text_similarity_threshold: 1.0  # Threshold for CLIP text similarity between GT class and word(s) being edited
+clip_img_thresh: 0.0  # Threshold for CLIP similarity between original and edited image
+clip_dir_thresh: 0.0  # Threshold for CLIP similarity between original and edited direction
+clip_thresh: 0.0  # Threshold for CLIP similarity between original and edited image and direction
+edit_word_weight: 2.0  # Maximum number of tries for editing a caption
+save_inversion: True  # Whether to save image inversion and load from it for future edits
+verbose: False  # Logging verbosity

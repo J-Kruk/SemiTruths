@@ -44,22 +44,22 @@ DATASETS = [
 ]
 
 
-def prepare_directory_struct(diff_model, output_dir_aug):
+def prepare_directory_struct(diff_model, output_dir_img_aug):
     """
     Builds a file structure for perturbed / generated
     labels and images. Works from directories declared
     in args.
     """
 
-    if not os.path.exists(output_dir_aug):
-        os.makedirs(output_dir_aug)
-    if not os.path.exists(os.path.join(output_dir_aug, "inpainting")):
-        os.makedirs(os.path.join(output_dir_aug, "inpainting"))
+    if not os.path.exists(output_dir_img_aug):
+        os.makedirs(output_dir_img_aug)
+    if not os.path.exists(os.path.join(output_dir_img_aug, "inpainting")):
+        os.makedirs(os.path.join(output_dir_img_aug, "inpainting"))
 
     for ds in DATASETS:
-        dir_ = os.path.join(output_dir_aug, "inpainting", ds, diff_model)
-        if not os.path.exists(os.path.join(output_dir_aug, "inpainting", ds)):
-            os.mkdir(os.path.join(output_dir_aug, "inpainting", ds))
+        dir_ = os.path.join(output_dir_img_aug, "inpainting", ds, diff_model)
+        if not os.path.exists(os.path.join(output_dir_img_aug, "inpainting", ds)):
+            os.mkdir(os.path.join(output_dir_img_aug, "inpainting", ds))
         if not os.path.exists(dir_):
             os.mkdir(dir_)
 
@@ -280,7 +280,7 @@ if __name__ == "__main__":
         help="Path to input data csv.",
     )
     parser.add_argument(
-        "--output_dir_aug",
+        "--output_dir_img_aug",
         default="../../data/gen",
         help="Path to augmented media.",
     )
@@ -292,7 +292,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # RUN INPAINTING --
-    prepare_directory_struct(args.diff_model, args.output_dir_aug)
+    prepare_directory_struct(args.diff_model, args.output_dir_img_aug)
     input_data_ds_qual = filter_labels(args.pert_file, args.input_meta)
 
     create_img_augmentations(
@@ -300,5 +300,5 @@ if __name__ == "__main__":
         args.input_data_pth,
         diff_model_dict,
         args.diff_model,
-        args.output_dir_aug,
+        args.output_dir_img_aug,
     )
