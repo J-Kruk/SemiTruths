@@ -140,8 +140,8 @@ if __name__ == "__main__":
     EDIT_EXTENSION = ".png"
 
     DATASETS = [
-        # "ADE20K",
-        "CelebAHQ"
+        "ADE20K",
+        # "CelebAHQ"
     ]
     MODELS = [
         # "Kandinsky_2_2",  #
