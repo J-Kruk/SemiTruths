@@ -127,24 +127,24 @@ file_type_map = {
 }
 
 
-print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
-mask_pert.perturb_mask_labels(args)
+# print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
+# mask_pert.perturb_mask_labels(args)
 
 
-print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
-input_data_ds_qual = llava_inpaint.filter_labels(
-    args.pert_file, args.input_metadata_pth
-)
+# print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
+# input_data_ds_qual = llava_inpaint.filter_labels(
+#     args.pert_file, args.input_metadata_pth
+# )
 
-for diff_model in diff_models:
-    llava_inpaint.prepare_directory_struct(diff_model, args.output_dir_aug)
-    gen_meta = llava_inpaint.create_img_augmentations(
-        input_data_ds_qual,
-        args.input_data_pth,
-        llava_inpaint.diff_model_dict,
-        diff_model,
-        args.output_dir_aug,
-    )
+# for diff_model in diff_models:
+#     llava_inpaint.prepare_directory_struct(diff_model, args.output_dir_aug)
+#     gen_meta = llava_inpaint.create_img_augmentations(
+#         input_data_ds_qual,
+#         args.input_data_pth,
+#         llava_inpaint.diff_model_dict,
+#         diff_model,
+#         args.output_dir_aug,
+#     )
 
 
 print("\nSTEP (3): Augmenting Images via Prompt-Based Editing")

@@ -259,13 +259,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--llama_finetuned_path",
         type=str,
-        default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
+        # default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
+        default="/data/jkruk3/half-truths/lance_checkpoints/lit-llama.pth",
         help="Path to finetuning llama model in lightning format",
     )
     parser.add_argument(
         "--llama_pretrained_path",
         type=str,
-        default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
+        # default="LANCE/checkpoints/caption_editing/lit-llama-lora-finetuned.pth",
+        default="/data/jkruk3/half-truths/lance_checkpoints/lit-llama.pth",
         help="Path to pretrained llama model in lightning format",
     )
     parser.add_argument(
