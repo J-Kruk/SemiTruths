@@ -7,16 +7,15 @@
 
 ### Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change (NeurIPS 2024)
 
-[**Website**](https://virajprabhu.github.io/lance-web/)
-| [**News**](https://www.cc.gatech.edu/news/stress-test-method-detects-when-object-recognition-models-are-using-shortcuts)
-| [**Walkthrough**](https://github.com/virajprabhu/LANCE/blob/master/walkthrough.ipynb)
-| [**Contributing**](CONTRIBUTING.md)
-| [**Paper**](https://huggingface.co/papers/2305.19164)
+[**Paper**](https://arxiv.org/abs/2411.07472)
+<!-- | [**Website**](https://virajprabhu.github.io/lance-web/) -->
+| [**Full Dataset**](https://huggingface.co/datasets/semi-truths/Semi-Truths)
+| [**Evaluation Set**](https://huggingface.co/datasets/semi-truths/Semi-Truths-Evalset)
+
+<img width="400px"
+src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
 
 </div>
-
-<center><img width="400px"
-src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." /></center>
 
 
 ## Get Started
@@ -62,4 +61,21 @@ cd stress_testing
 python run_1.py
 ```
 NOTE: An argparse is defined within this script that must be edited to reflect data locations.
+
+
+## BibTex
+
+If you find this work useful please like ❤️ our dataset repo and cite our paper. Thanks for your support!
+
+```
+@misc{pal2024semitruthslargescaledatasetaiaugmented,
+      title={Semi-Truths: A Large-Scale Dataset of AI-Augmented Images for Evaluating Robustness of AI-Generated Image detectors}, 
+      author={Anisha Pal and Julia Kruk and Mansi Phute and Manognya Bhattaram and Diyi Yang and Duen Horng Chau and Judy Hoffman},
+      year={2024},
+      eprint={2411.07472},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2411.07472}, 
+}
+```
 
