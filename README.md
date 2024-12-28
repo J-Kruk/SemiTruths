@@ -8,9 +8,9 @@
 ### Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change (NeurIPS 2024)
 
 [**Paper**](https://arxiv.org/abs/2411.07472)
-<!-- | [**Website**](https://virajprabhu.github.io/lance-web/) -->
 | [**Full Dataset**](https://huggingface.co/datasets/semi-truths/Semi-Truths)
 | [**Evaluation Set**](https://huggingface.co/datasets/semi-truths/Semi-Truths-Evalset)
+<!-- | [**Website**](https://virajprabhu.github.io/lance-web/) -->
 
 <img width="400px"
 src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
