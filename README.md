@@ -15,8 +15,8 @@
 
 </div>
 
-<img width="400px" css="display: block; margin-left: auto; margin-right: auto;" 
-src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
+<center><img width="400px"
+src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." /></center>
 
 
 ## Get Started
