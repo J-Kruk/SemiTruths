@@ -1,9 +1,12 @@
 # Semi-Truths
 Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change
 
+**[NeurIPS 2024]**
+
 <img width="400px" src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
 
 <img width="600px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
+
 
 
 ## Get Started
@@ -11,8 +14,19 @@ Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Cha
 ```
 conda create -n semi python=3.10
 conda activate semi
+
+cd LANCE/
+pip3 install -r requirements.txt 
+
+cd ../LLaVA/
+pip3 install -e .
+
+cd ..
 pip install -r requirements.txt
 ```
+
+NOTE: Some of LANCE dependancies conflict with LLaVA and Semi-Truths dependancies. You will notice "conflicting dependancy" warnings when configuring your environment, however, it will not impact your ability to run the code. Please proceed!
+
 
 ## Generating the SemiTruths Dataset
 
@@ -22,9 +36,9 @@ The input data sample is sourced from existing semantic segmentation datasets (A
 
 To simulate the data generation process on a small sample:
 ```
-sh generate_semi_truths.sh
+python generate_semi_truths.py
 ```
-NOTE: An argparse is defined within this script that can be edited to reflect different data locations.
+NOTE: Critical hyperparameters and data locations are declared in the `config.yaml` file. The user must update the data locations relative to your own directory structures. All other hyperparameter are set to reflect the configurations used to generate the Semi-Truths dataset.
 
 <img width="800px" src="./figures/final_full_pipeline.png" alt="Diagram of the SemiTruths image augmentation process." />
 
