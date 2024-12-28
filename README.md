@@ -1,12 +1,22 @@
 # Semi-Truths
-Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change
 
-**[NeurIPS 2024]**
+<div align="center">
+    <img width="600px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
 
-<img width="400px" src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
+---
 
-<img width="600px" src="./figures/mag_of_change_head_fig.png" alt="Different measures of magnitudes of change presented in SemiTruths: Area Ratio and Semantic Change" />
+### Dataset for Evaluating AI-Generated Image Detectors on Various Magnitudes of Change (NeurIPS 2024)
 
+[**Website**](https://virajprabhu.github.io/lance-web/)
+| [**News**](https://www.cc.gatech.edu/news/stress-test-method-detects-when-object-recognition-models-are-using-shortcuts)
+| [**Walkthrough**](https://github.com/virajprabhu/LANCE/blob/master/walkthrough.ipynb)
+| [**Contributing**](CONTRIBUTING.md)
+| [**Paper**](https://huggingface.co/papers/2305.19164)
+
+</div>
+
+<img width="400px" css="display: block; margin-left: auto; margin-right: auto;" 
+src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
 
 
 ## Get Started
