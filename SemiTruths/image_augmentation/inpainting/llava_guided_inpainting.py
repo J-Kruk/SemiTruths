@@ -21,9 +21,6 @@ from tqdm import tqdm
 from huggingface_hub import login
 import argparse
 
-# hugging face token for reading our input dataset:
-# login(token="")
-
 # MODEL DICT --> { <model name> : <model path hf> }
 diff_model_dict = {
     "StableDiffusion_v4": "CompVis/stable-diffusion-v1-4",
@@ -43,12 +40,26 @@ DATASETS = [
     "OpenImages",
 ]
 
+# NOTE: hugging face token for reading our input dataset:
+# login(token="")
+
+# loading input dataset from huggingface:
+# input_data = load_dataset("Half-Truths-Project/base-datasets-3")
+
 
 def prepare_directory_struct(diff_model, output_dir_img_aug):
     """
     Builds a file structure for perturbed / generated
     labels and images. Works from directories declared
     in args.
+
+    Inputs:
+    ----------------
+    diff_model : str
+        Name of diffusion model used in inpainting.
+    output_dir_img_aug : str (Path)
+        Path where to save inpainted images and perturned
+        captions.
     """
 
     if not os.path.exists(output_dir_img_aug):
@@ -64,27 +75,31 @@ def prepare_directory_struct(diff_model, output_dir_img_aug):
             os.mkdir(dir_)
 
 
-# loading input dataset from huggingface:
-# input_data = load_dataset("Half-Truths-Project/base-datasets-3")
-
-
 def filter_labels(pert_file, input_meta):
     """
     Filters out low-quality perturbed mask labels before
     using them for conditional image perturbation.
+
+    Inputs:
+    ----------------
+    pert_file : str (Path)
+        Path to json file with perturbed mask labels.
+    input_meta : str (Path)
+        Path to csv file with input, real image metadata.
+
+    Returns:
+    ----------------
+    input_data_ds_qual : pd.DataFrame
+        DataFrame of input, real images filtered on perturbed
+        label quality, ready for inpainting.
     """
-    # merging all dataset metadata into one DF:
+
     perturbed_labels = {}
-    # for file in os.listdir(args.pert_file):
     with open(pert_file, "r") as f:
         data_ = json.load(f)
-        # ds = data_[list(data_.keys())[0]]["dataset"]
         perturbed_labels = data_
 
-    # processing input data --> removing data flagged for poor quality:
-    # input_data_ds = pd.DataFrame(input_data[DATASET])
     input_data_ds = pd.read_csv(input_meta)
-
     input_data_ds = input_data_ds.loc[
         (input_data_ds.ratio != "1000.0") | (input_data_ds.mask_name != "NA")
     ]
@@ -109,6 +124,7 @@ def filter_labels(pert_file, input_meta):
                     ]
                     == row.mask_id
                 ][0]
+
             else:
                 mask_meta = [m for m in meta["objects"] if m["id"] == row.mask_id][0]
             pert_labels.append(mask_meta["target"])
@@ -141,7 +157,24 @@ def filter_labels(pert_file, input_meta):
 def inpaint_img(pipe, row, input_data_pth, mask_blur=16):
     """
     Create an inpainted image using the org_image,
-    mask, and perturbed mask label.
+    mask, and perturbed mask label. Preprocesses the image
+    mask before augmentation.
+
+    Inputs:
+    ----------------
+    pipe : HuggingFace Pipeline
+        Diffusion conditional inpainting model pipeline.
+    row : pd.Series
+        Row of metadata with image information.
+    input_data_pth : str (Path)
+        Path to input, real images.
+    mask_blur : int
+        Blur factor for mask Gaussian blur.
+
+    Returns:
+    ----------------
+    inpainted : PNG
+        Diffusion inpainted image.
     """
 
     prompt = row["perturbed_label"]
@@ -185,8 +218,22 @@ def create_img_augmentations(
     image in the input metadata. There will exist one perturbed image
     for each inpainting model listed in the diff_model_dict.
 
-    Returns a new metadata file with information on perturbed images
+    Saves a new metadata file with information on perturbed images
     in obj['generations'] for each image.
+
+    Inputs:
+    ----------------
+    input_data_ds_qual : pd.DataFrame
+        DataFrame containing input data filered on quality of perturbed
+        image mask labels.
+    input_data_pth : str (Path)
+        Path to input, real image data.
+    diff_model_dict : dict
+        Keys contain diffusion model name, values contain huggingface paths.
+    model_name : str
+        Name of diffusion model to use.
+    save_img_dir : str (Path)
+        Path to save inpainted images.
     """
 
     print(f"\nGenerating Inpainted Images with ::   {model_name}\n")
@@ -207,8 +254,6 @@ def create_img_augmentations(
 
     for ds in input_data_ds_qual.dataset.unique():
         ds_input_data_qual = input_data_ds_qual.loc[input_data_ds_qual.dataset == ds]
-
-        # preparing output metadata file --> `<dataset>_<model>_meta.csv`
         save_meta_file = os.path.join(
             save_img_dir,
             "inpainting",
@@ -216,6 +261,7 @@ def create_img_augmentations(
             model_name,
             f"{ds}_{model_name}_meta.csv",
         )
+
         if os.path.exists(save_meta_file):
             aug_meta = pd.read_csv(save_meta_file)
         else:
@@ -230,7 +276,6 @@ def create_img_augmentations(
         for i, row in tqdm(
             ds_input_data_qual.iterrows(), total=len(ds_input_data_qual)
         ):
-
             inpaint_path = os.path.join(
                 save_img_dir,
                 "inpainting",
@@ -261,6 +306,7 @@ def create_img_augmentations(
 
 
 if __name__ == "__main__":
+    ## ARGPARSE ##
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -291,7 +337,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # RUN INPAINTING --
+    ## RUN INPAINTING ##
     prepare_directory_struct(args.diff_model, args.output_dir_img_aug)
     input_data_ds_qual = filter_labels(args.pert_file, args.input_meta)
 

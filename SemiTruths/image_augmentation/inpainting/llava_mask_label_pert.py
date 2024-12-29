@@ -1,7 +1,6 @@
 import os
 import sys
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
 sys.path.append("../")
 sys.path.append("../LLaVA")
 
@@ -17,8 +16,6 @@ import transformers
 
 print("diffusers version:  ", diffusers.__version__)
 print("transformers version:  ", transformers.__version__)
-
-
 # from LLaVA.run_llava import eval_model, load_model, eval_model_wo_loading
 from diffusers import (
     StableDiffusionInpaintPipeline,
@@ -48,26 +45,40 @@ warnings.filterwarnings("ignore")
 # login(token="")
 
 
-def perturb_mask_labels(args):
+def perturb_mask_labels(
+    output_dir_mask_pert, input_data_pth, llava_model, llava_cache_dir
+):
     """
     Uses LLaVA to perturb entity mask labels to reflect various
-    magnitudes of changes.
+    magnitudes of changes. Saves perturbed mask labels in a json
+    at the specified location.
+
+    Inputs:
+    ----------------
+    output_dir_mask_pert : str (Path)
+        Directory to save metadata with perturbed mask labels.
+    input_data_pth :
+        Path to input, real image directory.
+    llava_model : HuggingFace Model
+        LLaVA-Mistral huggingface model id.
+    llava_cache_dir : str (Path)
+        Directory to store LLaVA cache files.
     """
-    if not os.path.exists(args.output_dir_mask_pert):
-        os.mkdir(args.output_dir_mask_pert)
-    OUTPATH = os.path.join(args.output_dir_mask_pert, "metadata_pert.json")
+
+    if not os.path.exists(output_dir_mask_pert):
+        os.mkdir(output_dir_mask_pert)
+    OUTPATH = os.path.join(output_dir_mask_pert, "metadata_pert.json")
     VIZ_DIR = os.getcwd()
 
     ## DATA LOADING ##
-    metadata = load_data_flat(args.input_data_pth)
+    metadata = load_data_flat(input_data_pth)
     processed_metadata = {}
     print(f"Number of images for mask label perturbation: {len(metadata)}\n")
-
     data_ds = InpaintingPertDataset(metadata)
     inf_dataloader = DataLoader(data_ds, batch_size=1, shuffle=True)
 
-    ## MODEL LOADING  ##
-    model_path = args.llava_model
+    ## MODEL LOADING ##
+    model_path = llava_model
     prompt = ""
     image_file = ""
     args_llava = type(
@@ -85,7 +96,7 @@ def perturb_mask_labels(args):
             "top_p": 0.5,
             "num_beams": 5,
             "max_new_tokens": 512,
-            "cache_dir": args.llava_cache_dir,
+            "cache_dir": llava_cache_dir,
         },
     )()
 
@@ -123,7 +134,6 @@ def perturb_mask_labels(args):
 
 
 if __name__ == "__main__":
-
     ## ARGPARSE ##
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -155,5 +165,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    perturb_mask_labels(args)
+    ## PERTURB MASK LABELS ##
+    perturb_mask_labels(
+        args.output_dir_mask_pert,
+        args.input_data_pth,
+        args.llava_model,
+        args.llava_cache_dir,
+    )
     print("LLaVA-Mistral mask label perturbations COMPLETE!!!")

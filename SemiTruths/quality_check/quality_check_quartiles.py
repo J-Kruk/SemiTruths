@@ -3,20 +3,11 @@ import pdb
 import numpy as np
 from tqdm import tqdm
 
-DS = [
-    "ADE20K", 
-      "CelebAHQ", 
-      "CityScapes", 
-      "HumanParsing", 
-      "OpenImages", 
-      "SUN_RGBD"]
-       
-
+DATA_FILE = f"/Users/mphute6/Documents/HalfTruths/postgen_quality_check_sem.csv"
+DS = ["ADE20K", "CelebAHQ", "CityScapes", "HumanParsing", "OpenImages", "SUN_RGBD"]
 cap = []
 img = []
 
-
-DATA_FILE = f"/Users/mphute6/Documents/HalfTruths/postgen_quality_check_sem.csv"
 
 data = json.load(open(DATA_FILE, "r"))
 
@@ -41,9 +32,9 @@ new_data = {}
 # it will return the similarity values that lie in the range
 # eg: (2,5), (90), (95), (95,100) etc
 # then we can check quality of generation and cross ref img based on path/ name
-values = range(2,5)
-desired_img_sim = [np.percentile(img,i) for i in values] 
-desired_cap_sim = [np.percentile(cap,i) for i in values]
+values = range(2, 5)
+desired_img_sim = [np.percentile(img, i) for i in values]
+desired_cap_sim = [np.percentile(cap, i) for i in values]
 
 ## SANDBOX TO FIND GOOD PERCENTILE RANGE
 for key in data.keys():
@@ -52,7 +43,7 @@ for key in data.keys():
         # pdb.set_trace()
         try:
             # if edit["direct_similarity"]  in desired_img_sim:
-            if edit["cap2_img2_similarity"]  in desired_cap_sim:
+            if edit["cap2_img2_similarity"] in desired_cap_sim:
                 print("Original:  ", edit["original_caption"])
                 print("Edited:  ", edit["edited_caption"])
                 print(key)
@@ -69,7 +60,7 @@ for key in data.keys():
 
 # lower_img = np.percentile(img, 5)
 # upper_img = np.percentile(img, 100)
-# 
+#
 # DATA_FILE = f"/Users/mphute6/Documents/HalfTruths/postgen_quality_check_sem.csv"
 # data = json.load(open(DATA_FILE, "r"))
 
@@ -102,5 +93,5 @@ for key in data.keys():
 # print(i)
 
 # OUT_DIR = f"/raid/mphute6/HalfTruths/SemanticDefinition/outputs/quality_check/{ds}.json"
-# with open(OUT_DIR, "w") as f:  
+# with open(OUT_DIR, "w") as f:
 #     json.dump(new_data, f)

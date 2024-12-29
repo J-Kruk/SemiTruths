@@ -37,16 +37,26 @@ print("torchvision version:  ", torchvision.__version__)
 import SemiTruths
 import SemiTruths.image_augmentation.inpainting.llava_mask_label_pert as mask_pert
 import SemiTruths.image_augmentation.inpainting.llava_guided_inpainting as llava_inpaint
+
 from SemiTruths.image_augmentation.prompt_based_editing.prompt_based_image_aug import (
     configure_lance_args,
     create_prompt_based_edits,
 )
-from utils import load_config_file, merge_args_with_config
 
-# sys.path.append("image_augmentation/")
-# sys.path.append("image_augmentation/inpainting")
-# sys.path.append("image_augmentation/LLaVA")
-# sys.path.append("image_augmentation/LANCE")
+from SemiTruths.quality_check.utils import (
+    preprocess_image,
+    calculate_caption_clip_similarity,
+    prune_length,
+    calculate_image_caption_clip_similarity,
+    calculate_image_similarity,
+    calculate_directional_similarity,
+    brisque_Score,
+)
+
+from SemiTruths.quality_check.quality_thresholds import apply_quality_thresholds
+from SemiTruths.quality_check.postgen_quality_check_size import postgen_quality_check
+
+from utils import load_config_file, merge_args_with_config
 import subprocess
 import pandas as pd
 import argparse
@@ -236,16 +246,45 @@ parser.add_argument(
     action="store_false",
     help="Whether to save image inversion and load from it for future edits",
 )
-##################################################################
+
+###########################################################################
+# Quality Check hyperparameters
+###########################################################################
+
+parser.add_argument(
+    "--qc_output_pth",
+    type=str,
+    default="./data/gen/qc_meta_files",
+    help="Path to directory containing quality metric metadata files.",
+)
+parser.add_argument(
+    "--edited_file_extension",
+    type=str,
+    default=".png",
+    help="File extension that augmented images are saved with.",
+)
+parser.add_argument(
+    "--consolidated_meta_pth",
+    type=str,
+    default="./data/gen/semitruths_metadata.csv",
+    help="Path where consolidated metadata will be saved.",
+)
+parser.add_argument(
+    "--metric_thresholds",
+    type=dict,
+    help="Dictionaary containing threshold to image quality metrics.",
+)
+
+###########################################################################
 
 args = parser.parse_args()
 
 config = load_config_file("config.yaml")
 args = merge_args_with_config(args, config)
 
-##################################################################
+###########################################################################
 # Diffusion Model Definitions & Keys
-##################################################################
+###########################################################################
 
 diff_models = [
     "StableDiffusion_v4",
@@ -266,10 +305,14 @@ file_type_map = {
 
 ##################################################################
 
-
-# print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
-# mask_pert.perturb_mask_labels(args)
-
+## Image Augmentation via Conditional Diffusion Inpainting ##
+print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
+mask_pert.perturb_mask_labels(
+    args.output_dir_mask_pert,
+    args.input_data_pth,
+    args.llava_model,
+    args.llava_cache_dir,
+)
 
 print("\nSTEP (2): Augmenting Images via Diffusion Inpainting")
 input_data_ds_qual = llava_inpaint.filter_labels(
@@ -286,34 +329,35 @@ for diff_model in diff_models:
         args.output_dir_img_aug,
     )
 
-print("\nSTEP (3): Augmenting Images via Prompt-Based Editing")
+## Image Augmentation via Prompt-Based Editing ##
+# print("\nSTEP (3): Augmenting Images via Prompt-Based Editing")
 
-for i, dm_ in enumerate(diff_models_LANCE):
-    print(f"\n     (3.{i+1}) Editing with {dm_}\n")
-    for ds in list(file_type_map.keys()):
-        subprocess.run(
-            [
-                "python",
-                "-m",
-                "SemiTruths.image_augmentation.prompt_based_editing.prompt_based_image_aug_2",
-                "--dset_name",
-                "ImageFolder",
-                "--img_dir",
-                args.input_data_pth,
-                "--json_path",
-                args.input_metadata_pth,
-                "--ldm_type",
-                dm_,
-                "--lance_output_path",
-                args.lance_output_path,
-                "--dataset",
-                ds,
-                "--editcap_dict_path",
-                "./data/editcap_dict.json",
-                "--gencap_dict_path",
-                "./data/prompt-prompt/gencap_dict.json",
-            ],
-        )
+# for i, dm_ in enumerate(diff_models_LANCE):
+#     print(f"\n     (3.{i+1}) Editing with {dm_}\n")
+#     for ds in list(file_type_map.keys()):
+#         subprocess.run(
+#             [
+#                 "python",
+#                 "-m",
+#                 "SemiTruths.image_augmentation.prompt_based_editing.prompt_based_image_aug_2",
+#                 "--dset_name",
+#                 "ImageFolder",
+#                 "--img_dir",
+#                 args.input_data_pth,
+#                 "--json_path",
+#                 args.input_metadata_pth,
+#                 "--ldm_type",
+#                 dm_,
+#                 "--lance_output_path",
+#                 args.lance_output_path,
+#                 "--dataset",
+#                 ds,
+#                 "--editcap_dict_path",
+#                 "./data/editcap_dict.json",
+#                 "--gencap_dict_path",
+#                 "./data/prompt-prompt/gencap_dict.json",
+#             ],
+#         )
 
 # for i, dm_ in enumerate(diff_models_LANCE):
 #     print(f"\n     (3.{i+1}) Editing with {dm_}\n")
@@ -323,4 +367,49 @@ for i, dm_ in enumerate(diff_models_LANCE):
 #         lance_args = configure_lance_args(parser, args, dm_, ds)
 #         create_prompt_based_edits(lance_args)
 
-print(f"\nSemi-Truths pipeline is complete! Data saved at {args.output_dir_img_aug}")
+
+## Quality Check Protocol ##
+print("\nSTEP (4): Running Quality Check Protocol on Inpainted Images")
+
+input_image_pth = f"{args.input_data_pth}/images"
+petrubed_image_pth = f"{args.output_dir_img_aug}/inpainting"
+
+for dataset in list(file_type_map.keys()):
+    for diff_model in diff_models:
+        CSV_READ_FILE = f"{petrubed_image_pth}/{dataset}/{diff_model}/{dataset}_{diff_model}_meta.csv"
+        CSV_POSTGEN_QC = (
+            f"{args.qc_output_pth}/{dataset}/{dataset}_{diff_model}_meta_qc_size.csv"
+        )
+        if os.path.exists(CSV_READ_FILE):
+            if not os.path.exists(f"{args.qc_output_pth}/{dataset}"):
+                os.mkdir(f"{args.qc_output_pth}/{dataset}")
+
+            postgen_quality_check(
+                CSV_READ_FILE,
+                CSV_POSTGEN_QC,
+                dataset,
+                input_image_pth,
+                petrubed_image_pth,
+                file_type_map[dataset],
+                args.edited_file_extension,
+            )
+
+## Applying Thresholds on Quality Metrics ##
+print("\nSTEP (5): Determining Quality Thresholds and Generating Final Quality Label")
+if args.metric_thresholds:
+    metric_thresholds = args.metric_thresholds
+else:
+    metric_thresholds = {
+        "img1_img2": [0.8816, 0.9896],
+        "cap2_img2": [0.2083, 0.2971],
+        "brisque_score_perturb": [0, 70],
+        "direct_sim": [0.8115, 0.9786],
+    }
+
+apply_quality_thresholds(
+    args.qc_output_pth, args.consolidated_meta_pth, metric_thresholds
+)
+
+print(
+    f"\nSemi-Truths pipeline is complete! Data saved at {args.output_dir_img_aug}, metadata is found in {args.consolidated_meta_pth}"
+)

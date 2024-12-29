@@ -10,9 +10,9 @@ input_metadata_pth: ./data/input/metadata.csv  #Path to input metadata.
 # Inpainting Augmentation Pipeline
 #-------------------------------------------------#
 llava_model: liuhaotian/llava-v1.6-mistral-7b
-output_dir_mask_pert: ./data/gen
-output_dir_img_aug: ./data/gen
-mask_pert_file: ./data/gen/metadata_pert.json
+output_dir_mask_pert: ./data/gen  # Path to save perturbed mask labels
+output_dir_img_aug: ./data/gen  # Path to save inpainted images
+mask_pert_file: ./data/gen/metadata_pert_labels.json  # Perturbed mask labels file name
 
 # Prompt-based Editing Pipeline
 #-------------------------------------------------#
@@ -24,6 +24,12 @@ gencap_dict_path: ./data/prompt-prompt/gencap_dict.json  # Path to JSON file con
 load_captions: True  # Load captions from path (intermediate save)
 editcap_dict_path: ./data/editcap_dict.json  # Path to JSON file containing edited captions
 load_caption_edits: True  # Load captions from path (intermediate save)
+
+# Quality Check Protocol
+#-------------------------------------------------#
+qc_output_pth: ./data/gen/qc_meta_files
+consolidated_meta_pth: ./data/gen/semitruths_metadata.csv
+
 
 ###################################################
 # NON-ESSENTIAL PARAMETERS
@@ -45,3 +51,12 @@ clip_thresh: 0.0  # Threshold for CLIP similarity between original and edited im
 edit_word_weight: 2.0  # Maximum number of tries for editing a caption
 save_inversion: True  # Whether to save image inversion and load from it for future edits
 verbose: False  # Logging verbosity
+
+# Quality Check Protocol
+#-------------------------------------------------#
+edited_file_extension: .png
+metric_thresholds:
+  img1_img2: [0.8816, 0.9896]
+  cap2_img2: [0.2083, 0.2971]
+  brisque_score_perturb: [0, 70]
+  direct_sim: [0.8115, 0.9786]

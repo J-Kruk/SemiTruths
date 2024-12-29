@@ -18,6 +18,20 @@ def load_data(data_dir, out_path):
     Loads the metadata if there was an intermediate save
     produced from a run being terminated pre-maturely.
     Otherwise, will return an empty dictionary object.
+
+    Inputs:
+    ----------------
+    data_dir : str (Path)
+        Directory with all input, real data.
+    out_path : str (Path)
+        Path to save json with perturbed mask labels.
+
+    Returns:
+    ----------------
+    metadata : dict (JSON)
+        Input media metadata, items removed if already proccessed.
+    processed : dict (JSON)
+        Already processed items.
     """
 
     # Loading dataset metadata:
@@ -42,9 +56,21 @@ def load_data(data_dir, out_path):
 
 def df_to_json(hf_data, data_dir=None):
     """
-    Transforms the metadata from a DataFrame from
-    to a json object (which was what the pipeline was
-    written for.)
+    Transforms the metadata from a DataFrame
+    to a json object (which was what the previous
+    pipeline was written for).
+
+    Inputs:
+    ----------------
+    hf_data : pd.DataFrame
+        Real, input data loaded from huggingface
+    data_dir : str (Path)
+        Input, real media parent directory.
+
+    Returns:
+    ----------------
+    data_dict : dict
+        Dictonary containing input metadata.
     """
     data_dict = {}
     org_img_ids = hf_data.image_id.unique()
@@ -83,6 +109,18 @@ def df_to_json(hf_data, data_dir=None):
 def load_data_flat(data_dir, metafile_name="metadata_flat.csv"):
     """
     Loading data from the flattened metadata.
+
+    Inputs:
+    ----------------
+    data_dir : str (Path)
+        Input, real media parent directory.
+    metafile_name : str (File)
+        Name of the flattened metadata file.
+
+    Returns:
+    ----------------
+    full_data_dict : dict
+        Loaded metadata.
     """
     metadata = pd.read_csv(os.path.join(data_dir, metafile_name))
     full_data_dict = df_to_json(metadata, data_dir=data_dir)
@@ -95,6 +133,20 @@ def load_data_hf(hf_dataset, data_dir, out_path):
     if there was an intermediate save produced from
     a run being terminated pre-maturely. Otherwise,
     will return an empty dictionary object.
+
+    Inputs:
+    ----------------
+    hf_dataset : str
+        HuggingFace dataset id / path.
+    data_dir : str (Path)
+        Input, real media parent directory.
+
+    Returns:
+    ----------------
+    full_data_dict : dict (JSON)
+        Input media metadata, items removed if already proccessed.
+    processed : dict (JSON)
+        Already processed items.
     """
     hf_data = load_dataset(hf_dataset)
 
@@ -130,6 +182,18 @@ def sample_data(metadata, n=20):
     """
     Samples n images randomly from the Half-Truths Input Data.
     Returns the sample as a dictionary.
+
+    Inputs:
+    ----------------
+    metadata : dict
+        Image metadata.
+    n : int
+        Items to sample.
+
+    Returns:
+    ----------------
+    data_samp : dict
+        Sampled metdata
     """
     img_ids = list(metadata.keys())
     exp_id = random.choices(img_ids, k=n)
@@ -148,6 +212,18 @@ def sample_by_dataset(metadata, ds):
     """
     Samples images from the Half-Truths Input Data that
     belong to the specific benchmark `ds`. Returns a dictionary.
+
+    Inputs:
+    ----------------
+    metadata : dict
+        Image metadata.
+    ds : str
+        Input dataset name.
+
+    Returns:
+    ----------------
+    data_samp : dict
+        Sampled metdata
     """
     print(f"Sampling input data from {ds}...")
     data_samp = {}
@@ -161,10 +237,19 @@ def sample_by_dataset(metadata, ds):
 
 def clean_json_output(output):
     """
-    Cleans the model's JSON object output into something that
-    will be read by json.loads.
+    Cleans the model's string output into something that
+    will be read by json.loads. Return json object.
 
-    Return json object.
+    Inputs:
+    ----------------
+    output : str
+        Output from language model relaying a json object
+        with the response.
+
+    Returns:
+    ----------------
+    _ : dict
+        Model responce in dictionary form.
     """
 
     if "`" in output or "json" in output:
@@ -180,6 +265,22 @@ def visualize_mask_label_perts(
 ):
     """
     This function visualizes a set of 6 images using matplotlib.
+    Used for qualitative evaluation of the language models success
+    in perturbing the mask label according to its instructions.
+    Shows and saves the generated figure.
+
+    Inputs:
+    ----------------
+    data_samp : dict
+        Sample of dataset (containing real images and perturbed labels)
+    root_dir : str (Path)
+        Input, real media parent directory.
+    viz_dir : str (Path)
+        Directory to save figure.
+    figsize : tuple[int]
+        Size of figure.
+    suptitle : str
+        Figure title.
     """
 
     fig, axes = plt.subplots(2, 3, figsize=figsize, constrained_layout=True)
@@ -222,6 +323,13 @@ def log_pert_quality(log_data, outfile="pert_quality_log.txt"):
     """
     Prints the set of data contained in log_data into
     a log file to enable quality inspection.
+
+    Inputs:
+    ----------------
+    log_data : dict
+        Data to be written to log file.
+    outfile : str (Path)
+        Path for creating / updating the log file.
     """
 
     with open(outfile, "w") as log_file:
@@ -246,6 +354,22 @@ def verify_output(output, mask_label, counter):
     Verifies that LLaVA perturbed caption is the correct
     length and form. Returns counter and boolean confirming
     whether the output is quality.
+
+    Inputs:
+    ----------------
+    output : str
+        Language model output with perturbed caption.
+    mask_label : str
+        Original mask label.
+    counter: int
+        Counter for recording model failures.
+
+    Returns:
+    ----------------
+    count : int
+        Updating by 1 for every validation.
+    flag : boolean
+        If output pasted quality check.
     """
     words = output.split()
     if (
@@ -277,6 +401,35 @@ def mask_change_inference_v0(
     Combines all parts of the LLaVA prompts and
     queries the model for inference. Returns the model's
     output, which is the recommended mask augmentation.
+
+    Inputs:
+    ----------------
+    img_path : str (Path)
+        Path to real image input to LlaVa.
+    mask : str
+        Mask entity label.
+    mag_change: str
+        Magnitude of change for label perturbation:
+        (small, medium, large).
+    context : str
+        Context containing descriptions of small, medium
+        and large magnitude changes.
+    args : dict (argparse)
+        Contains all arguments for label perturbation.
+    tokenizer : HuggingFace tokenizer object
+        LLaVA tokenizer.
+    model : HuggingFace model object
+        LLaVA model.
+    image_processor : HuggingFace object
+        Prepares images for LLaVA input.
+    context_len : int
+        Content length specification for LLaVA.
+
+
+    Returns:
+    ----------------
+    output : str
+        LLaVA inference output.
     """
 
     mask = mask.replace("_", " ")
@@ -318,6 +471,35 @@ def mask_change_inference_v1(
     Combines all parts of the LLaVA prompts and
     queries the model for inference. Returns the model's
     output, which is the recommended mask augmentation.
+
+     Inputs:
+    ----------------
+    img_path : str (Path)
+        Path to real image input to LlaVa.
+    mask : str
+        Mask entity label.
+    mag_change: str
+        Magnitude of change for label perturbation:
+        (small, medium, large).
+    context : str
+        Context containing descriptions of small, medium
+        and large magnitude changes.
+    args : dict (argparse)
+        Contains all arguments for label perturbation.
+    tokenizer : HuggingFace tokenizer object
+        LLaVA tokenizer.
+    model : HuggingFace model object
+        LLaVA model.
+    image_processor : HuggingFace object
+        Prepares images for LLaVA input.
+    context_len : int
+        Content length specification for LLaVA.
+
+
+    Returns:
+    ----------------
+    output : str
+        LLaVA inference output.
     """
 
     mask = mask.replace("_", " ")
@@ -341,7 +523,6 @@ def mask_change_inference_v1(
 
     setattr(args, "query", prompt)
     setattr(args, "image_file", img_path)
-
     return eval_model_wo_loading(tokenizer, model, image_processor, context_len, args)
 
 
@@ -360,11 +541,41 @@ def mask_change_inference(
     Combines all parts of the LLaVA prompts and
     queries the model for inference. Returns the model's
     output, which is the recommended mask augmentation.
+
+     Inputs:
+    ----------------
+    img_path : str (Path)
+        Path to real image input to LlaVa.
+    mask : str
+        Mask entity label.
+    mag_change: str
+        Magnitude of change for label perturbation:
+        (small, medium, large).
+    context : str
+        Context containing descriptions of small, medium
+        and large magnitude changes.
+    args : dict (argparse)
+        Contains all arguments for label perturbation.
+    tokenizer : HuggingFace tokenizer object
+        LLaVA tokenizer.
+    model : HuggingFace model object
+        LLaVA model.
+    image_processor : HuggingFace object
+        Prepares images for LLaVA input.
+    context_len : int
+        Content length specification for LLaVA.
+
+
+    Returns:
+    ----------------
+    output : str
+        LLaVA inference output.
     """
 
     mask = mask.replace("_", " ")
     prompt_types = ["aug", "replace"]
     type_ = random.choice(prompt_types)
+
     ### augmentation prompt
     if type_ == "aug":
         prompt = (
@@ -383,7 +594,6 @@ def mask_change_inference(
 
     setattr(args, "query", prompt)
     setattr(args, "image_file", img_path)
-
     return eval_model_wo_loading(tokenizer, model, image_processor, context_len, args)
 
 
@@ -405,9 +615,48 @@ def get_llava_perts(
     """
     Uses the latest instantiation of the ``size_based_change`` function
     to generate recommended perturbations for a set of images using LLaVA.
-
-    The recommended perturbation is saved in the ``data_samp`` dictionary,
+    The recommended perturbation is saved in the ``data`` dictionary,
     under the key ``target``.
+
+    The selected perturbed captions are added to the data dictionary and
+    saved at a specified location.
+
+     Inputs:
+    ----------------
+    data : dict
+        Input, real image metdata.
+    processed_metadata : dict
+        Mask entity label.
+    root_dir : str (Path)
+        Parent directory of input data.
+    outpath : str (Path)
+        Path to save perturbed mask labels.
+    context : str
+        Context containing descriptions of small, medium
+        and large magnitude changes.
+    args : dict (argparse)
+        Contains all arguments for label perturbation.
+    tokenizer : HuggingFace tokenizer object
+        LLaVA tokenizer.
+    model : HuggingFace model object
+        LLaVA model.
+    image_processor : HuggingFace object
+        Prepares images for LLaVA input.
+    context_len : int
+        Content length specification for LLaVA.
+    viz_dir : str (Path)
+        Directory to save label perturbations for
+        qualitative analysis.
+    retry : int
+        Number of allowed re-tries when language model
+        fails to produce a vaible perturbed label.
+    verbose : boolean
+        Print and log process updates.
+
+    Returns:
+    ----------------
+    processed_metadata : dict
+        Image metadata file updated with perturbed mask labels.
     """
     progress = 0
     recent_perts = []
@@ -532,7 +781,6 @@ def get_llava_perts(
     # final save:
     with open(outpath, "w") as out_file:
         json.dump(processed_metadata, out_file)
-
     return processed_metadata
 
 

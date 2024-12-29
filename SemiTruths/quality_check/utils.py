@@ -67,6 +67,7 @@ def calculate_image_caption_clip_similarity(image, caption):
 
 
 def calculate_image_similarity(image1, image2):
+
     image1 = preprocess_image(image1)["pixel_values"]
     image2 = preprocess_image(image2)["pixel_values"]
     image_encoding1 = model.get_image_features(image1)
@@ -81,11 +82,13 @@ def calculate_image_similarity(image1, image2):
 def calculate_directional_similarity(image1, caption1, image2, caption2):
     image1 = preprocess_image(image1)["pixel_values"]
     image2 = preprocess_image(image2)["pixel_values"]
+
     text_inputs = tokenizer(
         [caption1, caption2],
         padding=True,
         return_tensors="pt",
     ).to(torch_device)
+
     caption_encoding = model.get_text_features(**text_inputs)
     image_encoding1 = model.get_image_features(image1)
     image_encoding2 = model.get_image_features(image2)
@@ -94,6 +97,7 @@ def calculate_directional_similarity(image1, caption1, image2, caption2):
         image_encoding2 - caption_encoding[1],
         dim=-1,
     )
+
     return similarity.item()
 
 

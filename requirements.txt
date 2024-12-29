@@ -17,5 +17,6 @@ datasets>=3.1.0
 huggingface-hub==0.25.0
 diffusers>=0.31.0
 peft==0.10.0
+pybrisque
 
 

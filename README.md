@@ -44,9 +44,11 @@ To demonstrate our pipeline for creating highly descriptive AI-Augmented images 
 The input data sample is sourced from existing semantic segmentation datasets (ADE20K, CityScapes, CelebAHQ, HumanParsing, OpenImages, SUNRGBD).
 
 To simulate the data generation process on a small sample:
+
 ```
 python generate_semi_truths.py
 ```
+
 NOTE: Critical hyperparameters and data locations are declared in the `config.yaml` file. The user must update the data locations relative to your own directory structures. All other hyperparameter are set to reflect the configurations used to generate the Semi-Truths dataset.
 
 <img width="800px" src="./figures/final_full_pipeline.png" alt="Diagram of the SemiTruths image augmentation process." />
