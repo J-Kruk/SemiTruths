@@ -1,7 +1,12 @@
 import os
 import torch
 from PIL import Image
-from utils import *
+from SemiTruths.quality_check.utils import (
+    calculate_image_caption_similarity,
+    calculate_image_similarity,
+    calculate_directional_similarity,
+    brisque_Score,
+)
 from tqdm import tqdm
 import pandas as pd
 import pdb
@@ -74,7 +79,7 @@ def post_qual_check(
                 perturbed_img = Image.open(perturbed_img_path)
                 perturbed_caption = row["perturbed_label"]
 
-                cap2_img2 = calculate_image_caption_clip_similarity(
+                cap2_img2 = calculate_image_caption_similarity(
                     perturbed_img, perturbed_caption
                 )
                 direct_sim = calculate_directional_similarity(

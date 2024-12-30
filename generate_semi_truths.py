@@ -44,10 +44,7 @@ from SemiTruths.image_augmentation.prompt_based_editing.prompt_based_image_aug i
 )
 
 from SemiTruths.quality_check.utils import (
-    preprocess_image,
-    calculate_caption_clip_similarity,
-    prune_length,
-    calculate_image_caption_clip_similarity,
+    calculate_image_caption_similarity,
     calculate_image_similarity,
     calculate_directional_similarity,
     brisque_Score,
@@ -287,9 +284,9 @@ args = merge_args_with_config(args, config)
 ###########################################################################
 
 diff_models = [
-    "StableDiffusion_v4",
-    "StableDiffusion_v5",
-    "StableDiffusion_XL",
+    # "StableDiffusion_v4",
+    # "StableDiffusion_v5",
+    # "StableDiffusion_XL",
     "Kandinsky_2_2",
     "OpenJourney",
 ]
@@ -306,7 +303,7 @@ file_type_map = {
 ##################################################################
 
 ## Image Augmentation via Conditional Diffusion Inpainting ##
-print("STEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
+print("\nSTEP (1): Perturbing Mask Labels w/ LLaVA-Mistral-7b for Inpainting")
 mask_pert.perturb_mask_labels(
     args.output_dir_mask_pert,
     args.input_data_pth,

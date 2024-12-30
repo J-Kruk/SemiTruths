@@ -37,7 +37,7 @@ from huggingface_hub import login
 import warnings
 import argparse
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 torch.set_warn_always(False)
 warnings.filterwarnings("ignore")
 
@@ -120,7 +120,7 @@ def perturb_mask_labels(
     processed = get_llava_perts(
         metadata,
         processed_metadata,
-        args.input_data_pth,
+        input_data_pth,
         OUTPATH,
         context,
         args_llava,
