@@ -20,7 +20,7 @@ This script calculates the raw values of the change metrics for all the perturbe
 Example Usage: python change_metrics.py --root_csv /path/to/main/csv --root_dir /path/to/perturbed/images --real_imgs /path/to/real/images --model inpainting --save_dir /path/to/save/directory
 '''
 
-parser = argparse.ArgumentParser(description="Color Scheme for Skyscapes and Uavid")
+parser = argparse.ArgumentParser(description="Change metrics calculation")
 parser.add_argument('--root_csv', type=str, required=True,help='path to main csv containing all the metadata  details for all the perturbed images') 
 parser.add_argument('--root_dir', type=str, required=True,help='root directory to the perturbed images') 
 parser.add_argument('--real_imgs', type=str, required=True, help='root directory to real images')
