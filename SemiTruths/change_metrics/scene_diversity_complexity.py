@@ -14,7 +14,7 @@ The script generates the metrics and bins them into low, medium and high
 The script also plots the histograms of the metrics
 '''
 
-parser = argparse.ArgumentParser(description="Color Scheme for Skyscapes and Uavid")
+parser = argparse.ArgumentParser(description="Scene Diversity and Complexity Bins")
 parser.add_argument('--generate',  action='store_true',help='if the metrics have not been generated, set this flag to generate them') 
 parser.add_argument('--root_csv', type=str, required=True,help='root csv for the real images')  
 args = parser.parse_args()
