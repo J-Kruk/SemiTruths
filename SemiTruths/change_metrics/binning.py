@@ -10,7 +10,7 @@ import numpy as np
 import pdb
 
 
-parser = argparse.ArgumentParser(description="Color Scheme for Skyscapes and Uavid")
+parser = argparse.ArgumentParser(description="Creating bin thresholds")
 parser.add_argument('--inpainting_csv', type=str, required=True,help='path to main csv containing all change metrics values for the inpainting perturbed images') 
 parser.add_argument('--p2p_csv', type=str, required=True,help='path to main csv containing all change metrics values for the prompt-based-editing perturbed images') 
 parser.add_argument('--save_dir', type=str, required=True,help='path to save the json file') 
