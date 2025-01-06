@@ -149,11 +149,17 @@ args = parser.parse_args()
 
 
 df = pd.read_csv(args.root_csv)
+
+'''
+If the scene csv is provided, then the scene diversity and scene complexity columns are added
+Else the semantically meaningful and localized or diffused columns are added
+'''
 if(args.scene_csv is not None):
     df_scene = pd.read_csv(args.scene_csv)
     df = scene_cols(df, df_scene)
     df.to_csv(args.save_csv, index=False)
     exit()
+
 columns = ['post_edit_ratio', 'dreamsim','lpips_score','sen_sim','mse','ssim', 'area_ratio']
 file_path = args.root_json
 
@@ -163,9 +169,6 @@ for i in columns:
     df = sem_mag_5(df, i, data)
 
 df = localized_diffused(df, data)
-
-
-# df_merged = scene_cols(df, df1)
 df = df.drop(columns=df.columns[[0]], axis=1)
 df = df.drop(columns=['largest_component_size', 'cc_clusters', 'cluster_dist'])
 df.to_csv(args.save_csv, index=False)
