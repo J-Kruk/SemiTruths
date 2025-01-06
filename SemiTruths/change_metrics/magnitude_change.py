@@ -17,9 +17,7 @@ import os
 from scipy.spatial.distance import pdist, squareform
 from tqdm import tqdm 
 from skimage.metrics import structural_similarity
-from clip_similarity import *
 from dreamsim import dreamsim
-from transformers import BlipProcessor, BlipForConditionalGeneration 
 from PIL import Image, ImageOps 
 
 
@@ -44,12 +42,8 @@ class Change:
     Inputs:
     mse_threshold: float, default = 0.1
         Threshold for Mean Squared Error between the two images
-    blip_model_name: str, default = "Salesforce/blip-image-captioning-large"
-        Model name for Blip model
     sentence_transormer_model_name: str, default = "sentence-transformers/all-MiniLM-L6-v2"
         Model name for Sentence Transformer model
-    clip_model_name: str, default = "ViT-L/14"
-        Model name for CLIP model
     device: str, default = "cuda"
         Device to run the model on
     save_dir: str, default = None
@@ -60,9 +54,7 @@ class Change:
     def __init__(
         self,
         mse_threshold: int = 0.1,
-        blip_model_name: str = "Salesforce/blip-image-captioning-large",
         sentence_transormer_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-        clip_model_name: str = "ViT-L/14",
         device: str = "cuda",
         save_dir=None,
         save = False,
@@ -299,7 +291,6 @@ class Change:
                 save_img.save(os.path.join(name, os.path.splitext(fake_img_path.split('/')[-1])[0]))
 
             return [ratio_rgb, ssim_rgb, mse_rgb,lpips_score, dreamsim, sen_sim, largest_component_size_rgb, cc_clusters_rgb, cluster_dist_rgb]
-
 
 
 
