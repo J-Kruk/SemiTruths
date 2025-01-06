@@ -6,15 +6,30 @@ import os
 import sys 
 import pdb
 from tqdm import tqdm 
+import argparse
+
 def localized_diffused(df, dic):
+    '''
+    This function takes in the dataframe and the dictionary containing the values for the columns
+    and returns the dataframe with the localization column added
+    Input: df: dataframe
+              dic: dictionary containing the values for the columns
+    Output: df: dataframe with the localization column added, localized or diffused
+    '''
     
+
     largest_comp_size = list(df['largest_component_size'])
     cluster_dist = list(df['cluster_dist'])
     num_clusters = list(df['cc_clusters'])
-    mean_clusters = dic['cc_clusters']['mean']
-    dist_threshold = 0.25*512*math.sqrt(2)
+    mean_clusters = dic['cc_clusters']['mean'] 
+    dist_threshold = 0.25*512*math.sqrt(2) # 25% of the diagonal of the image
 
     type_change = []
+    '''
+    If the largest component size is greater than 20% of the image size, then it is diffused
+    If the number of clusters is greater than the mean number of clusters and the cluster distance is greater than the threshold, then it is diffused
+    Else it is localized
+    '''
     for i in tqdm(range(len(df)), total=len(df)):
         if(largest_comp_size[i]/(int(512*512)) > 0.2):
             type_change.append('diffused')
@@ -22,13 +37,18 @@ def localized_diffused(df, dic):
      
             type_change.append('diffused')
         else:
-            # pdb.set_trace()
             type_change.append('localized')
     df['localization'] = type_change
     return df 
 
 def sem_mag(df, col, dic):
-    # pdb.set_trace()
+    '''
+    This function takes in the dataframe and the dictionary containing the values for the columns
+    and returns the dataframe with the semantically meaningful column added
+    Input:  df: dataframe
+            dic: dictionary containing the values for the columns across 3 bins
+    Output: df: dataframe with the semantically meaningful column added, small, medium or large
+    '''
     small_max = dic[col]['small_threshold']
     large_max = dic[col]['large_threshold']
     col_name = col + '_category'
@@ -50,7 +70,13 @@ def sem_mag(df, col, dic):
     return df 
 
 def sem_mag_5(df, col, dic):
-    # pdb.set_trace()
+    '''
+    This function takes in the dataframe and the dictionary containing the values for the columns
+    and returns the dataframe with the semantically meaningful column added
+    Input:  df: dataframe
+            dic: dictionary containing the values for the columns across 5 bins
+    Output: df: dataframe with the semantically meaningful column added, small, medium or large
+    '''
     bin1 = dic[col]['bin1']
     bin2 = dic[col]['bin2']
     bin3= dic[col]['bin3']
@@ -78,23 +104,14 @@ def get_value(obj):
     elif isinstance(obj, int):
         return obj
 
-def majority_vote(row):
-    # pdb.set_trace()
-    counter = Counter(row)
-    most_common = counter.most_common(1)
-    return most_common[0][0]
-
-def conditional_majority_vote(row):
-
-    if row['method'] == 'inpainting':
-        columns_to_consider = ['ratio_category','ratio_rgb_category','ssim_rgb_category']
-        return majority_vote(row[columns_to_consider])
-    else:
-        columns_to_consider = ['ratio_rgb_category','ssim_rgb_category']
-        return majority_vote(row[columns_to_consider])
-
 def scene_cols(df, df1):
-    # pdb.set_trace()
+    '''
+    This function takes in the dataframe and the dictionary containing the values for the columns
+    and returns the dataframe with the scene diversity and scene complexity columns added
+    Input:  df: dataframe
+            df1: dataframe containing the scene diversity and scene complexity values
+    Output: df: dataframe with the scene diversity and scene complexity columns added
+    '''
     img_id_df = list(df['image_id'])
     dataset = list(df['dataset'])
     img_id_df1 = list(df1['image_id'])
@@ -122,13 +139,23 @@ def scene_cols(df, df1):
 
     return df
 
+parser = argparse.ArgumentParser(description='Create final bins')
+parser.add_argument('--root_csv', type=str, required=True, help='path to the main csv file inpainting or prompt-based-editing or real images')
+parser.add_argument('--save_csv', type=str, required=True, help='path to save the csv file')
+parser.add_argument('--root_json', type=str, required=True, help='path to the json file containing the bin values')
+parser.add_argument('--scene_csv', type=str, default=None, help='path to csv file containing the scene diversity and scene complexity values')
+
+args = parser.parse_args()
 
 
-df = pd.read_csv('/srv/hoffman-lab/flash9/apal72/half-truths/Semi-Truths/metadata/edited/bins/inpainting.csv')
-# df1 = pd.read_csv('/srv/share4/apal72/half-truths/data/Half_Truths_Dataset/metadata_flat_scene_diversity_complexity.csv')
-# columns_to_consider_sem = ['dreamsim_category','lpips_score_category','sen_sim_category']
+df = pd.read_csv(args.root_csv)
+if(args.scene_csv is not None):
+    df_scene = pd.read_csv(args.scene_csv)
+    df = scene_cols(df, df_scene)
+    df.to_csv(args.save_csv, index=False)
+    exit()
 columns = ['post_edit_ratio', 'dreamsim','lpips_score','sen_sim','mse','ssim', 'area_ratio']
-file_path = '/srv/hoffman-lab/flash9/apal72/half-truths/Semi-Truths/inpainting/mag_vals_5.json'
+file_path = args.root_json
 
 with open(file_path, 'r') as file:
     data = json.load(file)
@@ -137,16 +164,11 @@ for i in columns:
 
 df = localized_diffused(df, data)
 
-# df['sem_mag_category'] = df[columns_to_consider_sem].apply(majority_vote, axis=1)
-# df['size_mag_category'] = df.apply(conditional_majority_vote, axis=1)
-
 
 # df_merged = scene_cols(df, df1)
-pdb.set_trace()
 df = df.drop(columns=df.columns[[0]], axis=1)
 df = df.drop(columns=['largest_component_size', 'cc_clusters', 'cluster_dist'])
-path = '/srv/hoffman-lab/flash9/apal72/half-truths/Semi-Truths/metadata/edited/bins/inpainting.csv'
-df.to_csv(path)
+df.to_csv(args.save_csv, index=False)
 
 
         
