@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import os
 import pdb
 
-PATH_TO_PERTURB_DATA_PARENT = "/raid/mphute6/HalfTruths/inpainting_data/half-truths/half-truths/"
-PATH_TO_DATA_PARENT_IMG = "/raid/mphute6/HalfTruths/Half_Truths_Dataset/images/"
+PATH_TO_PERTURB_DATA_PARENT = ""
+PATH_TO_DATA_PARENT_IMG = ""
 EDIT_EXTENSION = ".png"
-PATH_TO_RESULT_CSV = '/raid/mphute6/HalfTruths/quality_check/final_filtered_sample_data.csv'
+PATH_TO_RESULT_CSV = ''
 
 
 
@@ -22,8 +22,7 @@ DS_extension_formats ={
     }
 
 #import all csv files in directory
-# all_files = glob("/raid/mphute6/HalfTruths/quality_check/postgen_qc/*postgen_qc.csv")
-all_files = glob("/raid/mphute6/HalfTruths/quality_check/postgen_qc/*.csv")
+all_files = glob("quality_check/postgen_qc/*.csv")
 list_all_df = [pd.read_csv(f) for f in all_files]
 combined_df = pd.concat(list_all_df)
 combined_df["index"] = range(len(combined_df))
@@ -40,7 +39,7 @@ metric_name = ['img1_img2', 'cap2_img2', 'brisque_score_orig', 'brisque_score_pe
 #     plt.ylabel(metric)
 #     plt.title(f'{metric} vs Index')
 #     # Save the graph
-#     plt.savefig(f'/raid/mphute6/HalfTruths/quality_check/{metric}_graph.png')
+#     plt.savefig(f'quality_check/{metric}_graph.png')
 
 # On observing brisque score of perturbed images we see two distinct guassian distributions
 

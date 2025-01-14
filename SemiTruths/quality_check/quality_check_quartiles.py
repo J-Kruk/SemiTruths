@@ -3,7 +3,7 @@ import pdb
 import numpy as np
 from tqdm import tqdm
 
-DATA_FILE = f"/Users/mphute6/Documents/HalfTruths/postgen_quality_check_sem.csv"
+DATA_FILE = f"postgen_quality_check_sem.csv"
 DS = ["ADE20K", "CelebAHQ", "CityScapes", "HumanParsing", "OpenImages", "SUN_RGBD"]
 cap = []
 img = []
@@ -28,10 +28,11 @@ img = np.array(img)
 
 new_data = {}
 
-# change range as per percentile value you want to check
+"""change range as per percentile value you want to check
 # it will return the similarity values that lie in the range
 # eg: (2,5), (90), (95), (95,100) etc
 # then we can check quality of generation and cross ref img based on path/ name
+"""
 values = range(2, 5)
 desired_img_sim = [np.percentile(img, i) for i in values]
 desired_cap_sim = [np.percentile(cap, i) for i in values]
@@ -53,45 +54,45 @@ for key in data.keys():
             continue
 
 
-## ACTUAL FILTERING
+## Filter based on percentiles calculated above
 
-# lower_cap = np.percentile(cap, 5)
-# upper_cap = np.percentile(cap, 90)
+lower_cap = np.percentile(cap, 5)
+upper_cap = np.percentile(cap, 90)
 
-# lower_img = np.percentile(img, 5)
-# upper_img = np.percentile(img, 100)
-#
-# DATA_FILE = f"/Users/mphute6/Documents/HalfTruths/postgen_quality_check_sem.csv"
-# data = json.load(open(DATA_FILE, "r"))
+lower_img = np.percentile(img, 5)
+upper_img = np.percentile(img, 100)
 
-# for key in data.keys():
-#     for edit in data[key]:
-#         try:
-#             if edit["cap1_cap2_similarity"] < lower_cap or edit["cap1_cap2_similarity"] > upper_cap:
-#                 continue
-#             elif edit["img1_cap1_similarity"] < lower_img or edit["img1_cap1_similarity"] > upper_img:
-#                 continue
-#             else:
-#                 new_data[key] = new_data.get(key, [])
-#                 new_data[key].append(edit)
-#                 # pdb.set_trace()
-#         except:
-#             # print(edit)
-#             continue
+DATA_FILE = f"/postgen_quality_check_sem.csv"
+data = json.load(open(DATA_FILE, "r"))
+
+for key in data.keys():
+    for edit in data[key]:
+        try:
+            if edit["cap1_cap2_similarity"] < lower_cap or edit["cap1_cap2_similarity"] > upper_cap:
+                continue
+            elif edit["img1_cap1_similarity"] < lower_img or edit["img1_cap1_similarity"] > upper_img:
+                continue
+            else:
+                new_data[key] = new_data.get(key, [])
+                new_data[key].append(edit)
+                # pdb.set_trace()
+        except:
+            # print(edit)
+            continue
 
 
-## SANITY CHECK
-# pdb.set_trace()
-# i = 0
-# for key in new_data.keys():
-#     for edit in new_data[key]:
-#         # print(edit)
-#         n = edit["cap1_cap2_similarity"]
-#         m = edit["img1_cap1_similarity"]
-#         i+=1
+# SANITY CHECK
+pdb.set_trace()
+i = 0
+for key in new_data.keys():
+    for edit in new_data[key]:
+        # print(edit)
+        n = edit["cap1_cap2_similarity"]
+        m = edit["img1_cap1_similarity"]
+        i+=1
 
-# print(i)
+print(i)
 
-# OUT_DIR = f"/raid/mphute6/HalfTruths/SemanticDefinition/outputs/quality_check/{ds}.json"
-# with open(OUT_DIR, "w") as f:
-#     json.dump(new_data, f)
+OUT_DIR = f"quality_check/{ds}.json"
+with open(OUT_DIR, "w") as f:
+    json.dump(new_data, f)

@@ -31,7 +31,22 @@ def post_qual_check(
     EDIT_EXTENSION,
     CSV_POSTGEN_QC,
 ):
-
+    """
+    Calculates the quality metrics for the generated images.
+    
+    Inputs:
+    -------
+    PATH_TO_DATA_PARENT (str): Path to the original images.
+    PATH_TO_PERTURB_DATA_PARENT (str): Path to the perturbed images.
+    DS_EXTENSION (str): Extension of the original images.
+    EDIT_EXTENSION (str): Extension of the perturbed images.
+    CSV_POSTGEN_QC (str): Path to the output CSV file containing the quality metrics.
+    
+    Outputs:
+    --------
+    Saves a csv with the quality metrics at CSV_POSTGEN_QC.
+    
+    """
     for i, row in tqdm(img_dataframe.iterrows(), total=len(img_dataframe)):
         if pd.isnull(row["cap2_img2"]):
             model = row["model"]
@@ -111,6 +126,7 @@ def postgen_quality_check(
     DS_EXTENSION,
     EDIT_EXTENSION,
 ):
+    
     if os.path.exists(CSV_POSTGEN_QC):
         gen_image_df = pd.read_csv(CSV_POSTGEN_QC)
     else:

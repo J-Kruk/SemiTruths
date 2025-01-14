@@ -156,12 +156,6 @@ def eval_model_wo_loading(tokenizer, model, image_processor, context_len, args):
     # Model
     # disable_torch_init()
 
-    # # model_name = get_model_name_from_path(args.model_path)
-    # model_name = "LlavaLlamaForCausalLM"
-    # tokenizer, model, image_processor, context_len = load_pretrained_model(
-    #     args.model_path, args.model_base, model_name , cache_dir = "/raid/mphute6/cache"
-    # )
-
     model_name = "LlavaLlamaForCausalLM"
     qs = args.query
     image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN

@@ -50,6 +50,16 @@ DS_EXTENSION = formats[DS]
 
 
 def post_qual_check_row(row, writer):
+    """
+    Calculate metrics for each row in the csv file
+    Input: 
+    row - list of values in the row
+    writer - csv writer object
+    
+    Output:
+    None. Function will write calculated values in the csv file
+    
+    """
     if len(row[column_map["img_id"]]):
 
         # remove model from orig path when just running independently
@@ -90,7 +100,7 @@ def post_qual_check_row(row, writer):
 
                 perturbed_caption = row[column_map["perturbed_caption"]]
 
-                cap2_img2 = calculate_image_caption_clip_similarity(
+                cap2_img2 = calculate_image_caption_similarity(
                     perturbed_img, perturbed_caption
                 )
                 direct_sim = calculate_directional_similarity(

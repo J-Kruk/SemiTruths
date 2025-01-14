@@ -37,11 +37,11 @@ def main():
     cap_sim = []
 
     CAPTION_DATA_DIR = (
-        f"/raid/mphute6/HalfTruths/SemanticDefinition/outputs/consolidated/{DS}.json"
+        f"HalfTruths/SemanticDefinition/outputs/consolidated/{DS}.json"
     )
-    IMG_DATA_DIR = f"/raid/mphute6/HalfTruths/Half_Truths_Dataset/images/{DS}/"
+    IMG_DATA_DIR = f"HalfTruths/Half_Truths_Dataset/images/{DS}/"
     FILTER_DATA_DIR = (
-        f"/raid/mphute6/HalfTruths/SemanticDefinition/outputs/quality_check/pregen/"
+        f"HalfTruths/SemanticDefinition/outputs/quality_check/pregen/"
     )
 
     caption_data_ds = json.load(open(CAPTION_DATA_DIR, "r"))
