@@ -12,8 +12,8 @@
 | [**Evaluation Set**](https://huggingface.co/datasets/semi-truths/Semi-Truths-Evalset)
 <!-- | [**Website**](https://virajprabhu.github.io/lance-web/) -->
 
-<img width="400px"
-src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." />
+<!-- <img width="400px"
+src="./figures/maintenance_sign.png" alt="This repo is breifly under maintenance until December 18th 2024." /> -->
 
 </div>
 
